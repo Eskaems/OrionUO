@@ -58,7 +58,8 @@ bool CPathFinder::CreateItemsList(int &x, int &y, char &z)
 
 	bool ignoreGameObjects = (g_Player->Graphic == 0x03DB);
 	bool ignoreDoors = g_Player->Dead();
-	bool ignoreGameCharacters = (ignoreDoors || g_Player->IgnoreCharacters() || g_Player->Stam >= g_Player->MaxStam);
+	//bool ignoreGameCharacters = (ignoreDoors || g_Player->IgnoreCharacters() || g_Player->Stam >= g_Player->MaxStam);
+	bool ignoreGameCharacters = true;
 
 	CRenderWorldObject *obj = block->GetRender(bx, by);
 
