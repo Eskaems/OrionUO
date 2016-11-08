@@ -8,6 +8,7 @@
 */
 //----------------------------------------------------------------------------------
 #include "GumpStatusbar.h"
+#include "GumpTargetSystem.h"
 #include "../Game objects/GameWorld.h"
 #include "../Game objects/GamePlayer.h"
 #include "../Managers/PacketManager.h"
@@ -1013,44 +1014,80 @@ bool CGumpStatusbar::OnLeftMouseButtonDoubleClick()
 	if (g_GeneratedMouseDown)
 		return false;
 
-	if (!g_PressedObject.LeftSerial && m_Serial == g_PlayerSerial && m_Minimized)
+	if (!g_PressedObject.LeftSerial && m_Serial == g_PlayerSerial)
 	{
-		//Если это статусбар игрока (с полосками) то развернем его до полной версии
-		m_Minimized = false;
-
-		if (InGroup())
+		//Если нет нового таргета, сначала вешаем его, а уже затем разворачиваем статусбар
+		if (!g_ConfigManager.DisableNewTargetSystem && g_NewTargetSystem.Serial != m_Serial)
 		{
-			CGumpStatusbar *oldGroup = m_GroupNext;
+			g_GumpManager.CloseGump(g_NewTargetSystem.Serial, 0, GT_TARGET_SYSTEM);
+			g_NewTargetSystem.Serial = m_Serial;
 
-			if (oldGroup == NULL)
-				oldGroup = m_GroupPrev;
-
-			RemoveFromGroup();
-
-			if (oldGroup != NULL)
+			if (g_GumpManager.GetGump(g_NewTargetSystem.Serial, 0, GT_TARGET_SYSTEM) == NULL)
 			{
-				oldGroup->UpdateGroup(0, 0);
-				oldGroup->WantRedraw = true;
+				if (g_NewTargetSystem.Serial < 0x40000000)
+					CPacketStatusRequest(g_NewTargetSystem.Serial).Send();
+
+				g_GumpManager.AddGump(new CGumpTargetSystem(g_NewTargetSystem.Serial, g_NewTargetSystem.GumpX, g_NewTargetSystem.GumpY));
 			}
 		}
+		else if (m_Minimized)
+		{
+			//Если это статусбар игрока (с полосками) то развернем его до полной версии
+			m_Minimized = false;
 
-		m_WantUpdateContent = true;
+			if (InGroup())
+			{
+				CGumpStatusbar *oldGroup = m_GroupNext;
+
+				if (oldGroup == NULL)
+					oldGroup = m_GroupPrev;
+
+				RemoveFromGroup();
+
+				if (oldGroup != NULL)
+				{
+					oldGroup->UpdateGroup(0, 0);
+					oldGroup->WantRedraw = true;
+				}
+			}
+
+			m_WantUpdateContent = true;
+		}
+		else if (!m_Minimized)
+			//По даблклику по полной версии статусбара теперь открывается папердолл
+			g_Orion.PaperdollReq(m_Serial);
 
 		return true;
 	}
 	else if (m_Serial != g_PlayerSerial)
 	{
+		// При клике на статусбар вешаем новый таргет
+		if (!g_ConfigManager.DisableNewTargetSystem)
+		{
+			if (g_NewTargetSystem.Serial != m_Serial)
+			{
+				g_GumpManager.CloseGump(g_NewTargetSystem.Serial, 0, GT_TARGET_SYSTEM);
+				g_NewTargetSystem.Serial = m_Serial;
+
+				if (g_GumpManager.GetGump(g_NewTargetSystem.Serial, 0, GT_TARGET_SYSTEM) == NULL)
+				{
+					if (g_NewTargetSystem.Serial < 0x40000000)
+						CPacketStatusRequest(g_NewTargetSystem.Serial).Send();
+
+					g_GumpManager.AddGump(new CGumpTargetSystem(g_NewTargetSystem.Serial, g_NewTargetSystem.GumpX, g_NewTargetSystem.GumpY));
+				}
+				
+				if (g_Player->Warmode)
+					g_Orion.Attack(m_Serial); //Если в вармоде - атакуем сразу после установки таргета
+					
+				return true; //Для избежания открытия папердолла во время установки таргета
+			}
+		}
+	
 		if (g_Player->Warmode)
 			g_Orion.Attack(m_Serial); //Если в вармоде - атакуем
 		else
 			g_Orion.DoubleClick(m_Serial); //Или используем предмет
-
-		return true;
-	}
-	else if (!m_Minimized)
-	{
-		//По даблклику по полной версии статусбара теперь открывается папердолл
-		g_Orion.PaperdollReq(m_Serial);
 
 		return true;
 	}

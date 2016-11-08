@@ -1921,7 +1921,7 @@ bool CGameScreen::OnLeftMouseButtonDoubleClick()
 
 	if (charUnderMouse != 0)
 	{
-		if (charUnderMouse != g_PlayerSerial && !g_ConfigManager.DisableNewTargetSystem && charUnderMouse < 0x40000000)
+		if (charUnderMouse != g_NewTargetSystem.Serial && !g_ConfigManager.DisableNewTargetSystem && charUnderMouse < 0x40000000)
 		{
 			g_GumpManager.CloseGump(g_NewTargetSystem.Serial, 0, GT_TARGET_SYSTEM);
 			g_NewTargetSystem.Serial = charUnderMouse;
@@ -1932,6 +1932,11 @@ bool CGameScreen::OnLeftMouseButtonDoubleClick()
 
 				g_GumpManager.AddGump(new CGumpTargetSystem(charUnderMouse, g_NewTargetSystem.GumpX, g_NewTargetSystem.GumpY));
 			}
+			
+			if (g_Player->Warmode && charUnderMouse != g_PlayerSerial)
+				g_Orion.Attack(charUnderMouse); //Если в вармоде - атакуем сразу после установки таргета
+				
+			return true; //Для избежания открытия папердолла во время установки таргета
 		}
 
 		if (g_Player->Warmode && charUnderMouse != g_PlayerSerial)
