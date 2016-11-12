@@ -47,6 +47,7 @@
 #include "../QuestArrow.h"
 #include "../MultiMap.h"
 #include "../TargetGump.h"
+#include "../Walker/PathFinder.h"
 #include "../Gumps/GumpBuff.h"
 #include "../Gumps/GumpSecureTrading.h"
 #include "../Gumps/GumpTextEntryDialog.h"
@@ -866,6 +867,7 @@ PACKET_HANDLER(EnterWorld)
 		g_Season = ST_SUMMER;
 		g_OldSeason = ST_SUMMER;
 		g_GlobalScale = 1.0;
+		g_PathFinder.BlockMoving = false;
 	}
 
 	Move(4);
@@ -1624,11 +1626,10 @@ PACKET_HANDLER(EquipItem)
 	if (m_ClientVersion >= CV_308Z && !obj->ClilocMessage.length())
 		m_MegaClilocRequests.push_back(obj->Serial);
 
-	if (layer < OL_MOUNT)
-		g_GumpManager.UpdateContent(cserial, 0, GT_PAPERDOLL);
-
 	if (layer >= OL_BUY_RESTOCK && layer <= OL_SELL)
 		obj->Clear();
+	else if (layer < OL_MOUNT)
+		g_GumpManager.UpdateContent(cserial, 0, GT_PAPERDOLL);
 }
 //----------------------------------------------------------------------------------
 PACKET_HANDLER(UpdateContainedItem)
@@ -1715,7 +1716,12 @@ PACKET_HANDLER(UpdateContainedItem)
 		CGameObject *top = container->GetTopObject();
 
 		if (top != NULL)
-			g_GumpManager.UpdateContent(top->Serial, 0, GT_TRADE);
+		{
+			top = top->FindSecureTradeBox();
+
+			if (top != NULL)
+				g_GumpManager.UpdateContent(0, top->Serial, GT_TRADE);
+		}
 	}
 }
 //----------------------------------------------------------------------------------
@@ -1727,7 +1733,7 @@ PACKET_HANDLER(UpdateContainedItems)
 	ushort count = ReadUInt16BE();
 	uint cupd = 0;
 	CGameItem *contobj = NULL;
-	bool isContGameBoard = false;
+	//bool isContGameBoard = false;
 	bool bbUpdated = false;
 	vector<CORPSE_EQUIPMENT_DATA> vced;
 	bool containerIsCorpse = false;
@@ -1791,13 +1797,13 @@ PACKET_HANDLER(UpdateContainedItems)
 
 				objA->Clear();
 
-				if (contobj->Opened)
+				/*if (contobj->Opened)
 				{
 					CGump *gameGump = g_GumpManager.GetGump(contobj->Serial, 0, GT_CONTAINER);
 
 					if (gameGump != NULL)
 						isContGameBoard = ((CGumpContainer*)gameGump)->IsGameBoard;
-				}
+				}*/
 			}
 		}
 
@@ -1861,7 +1867,12 @@ PACKET_HANDLER(UpdateContainedItems)
 		CGameObject *top = contobj->GetTopObject();
 
 		if (top != NULL)
-			g_GumpManager.UpdateContent(top->Serial, 0, GT_TRADE);
+		{
+			top = top->FindSecureTradeBox();
+
+			if (top != NULL)
+				g_GumpManager.UpdateContent(0, top->Serial, GT_TRADE);
+		}
 	}
 }
 //----------------------------------------------------------------------------------
@@ -1941,7 +1952,12 @@ PACKET_HANDLER(DeleteObject)
 			CGameObject *top = obj->GetTopObject();
 
 			if (top != NULL)
-				g_GumpManager.UpdateContent(top->Serial, 0, GT_TRADE);
+			{
+				CGameObject *tradeBox = top->FindSecureTradeBox();
+
+				if (tradeBox != NULL)
+					g_GumpManager.UpdateContent(0, tradeBox->Serial, GT_TRADE);
+			}
 
 			if (!obj->NPC && ((CGameItem*)obj)->Layer != OL_NONE)
 				g_GumpManager.UpdateContent(cont, 0, GT_PAPERDOLL);
@@ -2294,10 +2310,8 @@ PACKET_HANDLER(OpenContainer)
 
 		g_ContainerRect.Calculate(gumpid);
 
-		gump = new CGumpContainer(serial, g_ContainerRect.X, g_ContainerRect.Y);
+		gump = new CGumpContainer(serial, gumpid, g_ContainerRect.X, g_ContainerRect.Y);
 		gump->Graphic = graphic;
-		((CGumpContainer*)gump)->m_BodyGump->Graphic = gumpid;
-		((CGumpContainer*)gump)->IsGameBoard = (gumpid == 0x091A || gumpid == 0x092E);
 		g_Orion.ExecuteGump(gumpid);
 	}
 
@@ -3531,7 +3545,7 @@ PACKET_HANDLER(MegaCliloc)
 
 		if (first)
 		{
-			if (!obj->NPC)
+			if (coloredStartFont)
 				message += L"<basefont color=\"#FFFFFFFF\">";
 
 			first = false;
