@@ -134,6 +134,40 @@ uint COrion::GetFileHashCode(uint address, uint size)
 	return (crc & 0xFFFFFFFF);
 }
 //----------------------------------------------------------------------------------
+void COrion::GetCurrentLocale()
+{
+	//https://msdn.microsoft.com/en-us/library/cc233982.aspx
+
+	wchar_t localeName[LOCALE_NAME_MAX_LENGTH] = { 0 };
+
+	if (GetSystemDefaultLocaleName(&localeName[0], LOCALE_NAME_MAX_LENGTH))
+	{
+		IFOR(i, 0, 10)
+		{
+			if (!localeName[i])
+				break;
+			else if (localeName[i] == L'-')
+			{
+				localeName[i] = 0;
+				break;
+			}
+		}
+
+		wstring locale = ToLowerW(localeName);
+
+		if (locale == L"ru")
+			g_Language = "RUS";
+		else if (locale == L"fr")
+			g_Language = "FRA";
+		else if (locale == L"de")
+			g_Language = "DEU";
+
+		LOG("Locale set to: %s\n", g_Language.c_str());
+	}
+	else
+		LOG("Locale set to default value: ENU\n");
+}
+//----------------------------------------------------------------------------------
 bool COrion::Install()
 {
 	LOG("COrion::Install()\n");
@@ -147,6 +181,8 @@ bool COrion::Install()
 
 		m_CRC_Table[i] = Reflect(m_CRC_Table[i], 32);
 	}
+
+	GetCurrentLocale();
 
 	CreateDirectoryA(g_App.FilePath("snapshots").c_str(), NULL);
 
@@ -220,6 +256,7 @@ bool COrion::Install()
 	else
 		g_MapManager = new CMapManager();
 
+	DEBUGLOG("Create map blocksTable\n");
 	g_MapManager->CreateBlocksTable();
 
 	DEBUGLOG("Patch files\n");
@@ -586,7 +623,8 @@ void COrion::ProcessDelayedClicks()
 		{
 			if (serial)
 			{
-				NameReq(serial);
+				if (g_PacketManager.ClientVersion < CV_308Z)
+					NameReq(serial);
 
 				//if (serial < 0x40000000)
 				{
