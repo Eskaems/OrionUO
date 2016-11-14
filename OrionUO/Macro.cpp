@@ -31,6 +31,7 @@ CMacroObject::CMacroObject(const MACRO_CODE &code, const MACRO_SUB_CODE &subCode
 		case MC_SELECT_NEXT:
 		case MC_SELECT_PREVEOUS:
 		case MC_SELECT_NEAREST:
+		case MC_SELECT_SELF:
 		{
 			if (subCode == MSC_NONE)
 			{
@@ -418,6 +419,7 @@ const char *CMacro::m_MacroActionName[MACRO_ACTION_NAME_COUNT] =
 	"SelectNext",
 	"SelectPreveous",
 	"SelectNearest",
+	"SelectSelf",
 	"AttackSelectedTarget",
 	"UseSelectedTarget",
 	"CurrentTarget",

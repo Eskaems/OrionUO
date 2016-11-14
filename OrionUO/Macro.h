@@ -62,7 +62,7 @@ public:
 	CMacro(const ushort &key, const bool &alt, const bool &ctrl, const bool &shift);
 	virtual ~CMacro();
 
-	static const int MACRO_ACTION_NAME_COUNT = 60;
+	static const int MACRO_ACTION_NAME_COUNT = 61;
 	static const int MACRO_ACTION_COUNT = 210;
 
 	//Названия макросов

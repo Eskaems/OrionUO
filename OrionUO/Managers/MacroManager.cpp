@@ -1237,7 +1237,7 @@ MACRO_RETURN_CODE CMacroManager::Process()
 				
 				SCAN_TYPE_OBJECT scanType = (SCAN_TYPE_OBJECT)(g_MacroPointer->SubCode - MSC_G7_HOSTLE);
 
-				CGameObject *obj = g_World->SearchWorldObject(g_NewTargetSystem.Serial, 10, scanType, (SCAN_MODE_OBJECT)(g_MacroPointer->Code - MC_SELECT_NEXT));
+				CGameObject *obj = g_World->SearchWorldObject(g_NewTargetSystem.Serial, 15, scanType, (SCAN_MODE_OBJECT)(g_MacroPointer->Code - MC_SELECT_NEXT));
 
 				if (obj != NULL)
 				{
@@ -1260,6 +1260,23 @@ MACRO_RETURN_CODE CMacroManager::Process()
 					g_Orion.CreateUnicodeTextMessageF(0, 0x038A, "There are no %s on the screen to select.", resultNames[scanType]);
 				}
 
+				break;
+			}
+			case MC_SELECT_SELF:
+			{
+				if (g_ConfigManager.DisableNewTargetSystem)
+					break;
+
+				g_GumpManager.CloseGump(g_NewTargetSystem.Serial, 0, GT_TARGET_SYSTEM);
+				g_NewTargetSystem.Serial = g_PlayerSerial;
+
+				if (g_GumpManager.GetGump(g_NewTargetSystem.Serial, 0, GT_TARGET_SYSTEM) == NULL)
+				{
+					if (g_NewTargetSystem.Serial < 0x40000000)
+						CPacketStatusRequest(g_NewTargetSystem.Serial).Send();
+
+					g_GumpManager.AddGump(new CGumpTargetSystem(g_NewTargetSystem.Serial, g_NewTargetSystem.GumpX, g_NewTargetSystem.GumpY));
+				}
 				break;
 			}
 			case MC_TOGGLE_BUICON_WINDOW:
