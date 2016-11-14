@@ -39,6 +39,23 @@ m_HitsBody(NULL), m_Entry(NULL), m_Name("")
 		m_MinimizedY = y;
 	}
 
+	if (!g_ConfigManager.DisableNewTargetSystem)
+	{
+		if (g_NewTargetSystem.Serial != m_Serial && m_Serial != g_PlayerSerial)
+		{
+			g_GumpManager.CloseGump(g_NewTargetSystem.Serial, 0, GT_TARGET_SYSTEM);
+			g_NewTargetSystem.Serial = m_Serial;
+
+			if (g_GumpManager.GetGump(g_NewTargetSystem.Serial, 0, GT_TARGET_SYSTEM) == NULL)
+			{
+				if (g_NewTargetSystem.Serial < 0x40000000)
+					CPacketStatusRequest(g_NewTargetSystem.Serial).Send();
+
+				g_GumpManager.AddGump(new CGumpTargetSystem(g_NewTargetSystem.Serial, g_NewTargetSystem.GumpX, g_NewTargetSystem.GumpY));
+			}
+		}
+	}
+
 	if (!g_ConfigManager.DisableNewTargetSystem && m_Serial == g_NewTargetSystem.Serial)
 		g_GumpManager.UpdateGump(m_Serial, 0, GT_TARGET_SYSTEM);
 
@@ -935,7 +952,7 @@ void CGumpStatusbar::OnLeftMouseButtonDown()
 		return;
 
 	CGump::OnLeftMouseButtonDown();
-
+	
 	if (!g_PressedObject.LeftSerial || g_PressedObject.LeftSerial > ID_GSB_LOCK_MOVING)
 	{
 		//Проверим, может быть есть таргет, который нужно повесить на данного чара
@@ -1053,10 +1070,11 @@ bool CGumpStatusbar::OnLeftMouseButtonDoubleClick()
 
 			m_WantUpdateContent = true;
 		}
-		else if (!m_Minimized)
-			//По даблклику по полной версии статусбара теперь открывается папердолл
-			g_Orion.PaperdollReq(m_Serial);
-
+		else if (!m_Minimized) {
+			//По даблклику по полной версии статусбара теперь открывается свернутая версия
+			m_Minimized = true;
+			m_WantUpdateContent = true;
+		}
 		return true;
 	}
 	else if (m_Serial != g_PlayerSerial)
