@@ -1262,23 +1262,6 @@ MACRO_RETURN_CODE CMacroManager::Process()
 
 				break;
 			}
-			case MC_SELECT_SELF:
-			{
-				if (g_ConfigManager.DisableNewTargetSystem)
-					break;
-
-				g_GumpManager.CloseGump(g_NewTargetSystem.Serial, 0, GT_TARGET_SYSTEM);
-				g_NewTargetSystem.Serial = g_PlayerSerial;
-
-				if (g_GumpManager.GetGump(g_NewTargetSystem.Serial, 0, GT_TARGET_SYSTEM) == NULL)
-				{
-					if (g_NewTargetSystem.Serial < 0x40000000)
-						CPacketStatusRequest(g_NewTargetSystem.Serial).Send();
-
-					g_GumpManager.AddGump(new CGumpTargetSystem(g_NewTargetSystem.Serial, g_NewTargetSystem.GumpX, g_NewTargetSystem.GumpY));
-				}
-				break;
-			}
 			case MC_TOGGLE_BUICON_WINDOW:
 			{
 				g_ConfigManager.ToggleBufficonWindow = !g_ConfigManager.ToggleBufficonWindow;
@@ -1301,6 +1284,23 @@ MACRO_RETURN_CODE CMacroManager::Process()
 			{
 				g_Orion.CreateTextMessage(TT_SYSTEM, 0xFFFFFFFF, 3, 0x77, "That macro is not work now");
 
+				break;
+			}
+			case MC_SELECT_SELF:
+			{
+				if (g_ConfigManager.DisableNewTargetSystem)
+					break;
+
+				g_GumpManager.CloseGump(g_NewTargetSystem.Serial, 0, GT_TARGET_SYSTEM);
+				g_NewTargetSystem.Serial = g_PlayerSerial;
+
+				if (g_GumpManager.GetGump(g_NewTargetSystem.Serial, 0, GT_TARGET_SYSTEM) == NULL)
+				{
+					if (g_NewTargetSystem.Serial < 0x40000000)
+						CPacketStatusRequest(g_NewTargetSystem.Serial).Send();
+
+					g_GumpManager.AddGump(new CGumpTargetSystem(g_NewTargetSystem.Serial, g_NewTargetSystem.GumpX, g_NewTargetSystem.GumpY));
+				}
 				break;
 			}
 			default:
