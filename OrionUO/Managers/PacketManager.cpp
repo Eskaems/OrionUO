@@ -566,12 +566,15 @@ void CPacketManager::SendMegaClilocRequests(UINT_LIST &list)
 {
 	if (list.size())
 	{
-		if (m_ClientVersion >= CV_500A)
-			CPacketMegaClilocRequest(list).Send();
-		else
+		if (g_TooltipsEnabled)
 		{
-			//IFOR(i, 0, (int)list.size())
-			//	CPacketMegaClilocRequestOld(list[i]).Send();
+			if (m_ClientVersion >= CV_500A)
+				CPacketMegaClilocRequest(list).Send();
+			else
+			{
+				//IFOR(i, 0, (int)list.size())
+				//	CPacketMegaClilocRequestOld(list[i]).Send();
+			}
 		}
 
 		list.clear();
@@ -770,10 +773,11 @@ PACKET_HANDLER(CharacterList)
 
 	g_ClientFlag = ReadUInt32BE();
 
-	g_CharacterList.OnePerson = (bool)(g_ClientFlag & LFF_TD);
-	g_SendLogoutNotification = (bool)(g_ClientFlag & LFF_RE);
-	g_NPCPopupEnabled = (bool)(g_ClientFlag & LFF_LBR);
-	g_ChatEnabled = (bool)(g_ClientFlag & LFF_T2A);
+	g_CharacterList.OnePerson = (bool)(g_ClientFlag & CLF_ONE_CHARACTER_SLOT);
+	//g_SendLogoutNotification = (bool)(g_ClientFlag & LFF_RE);
+	g_NPCPopupEnabled = (bool)(g_ClientFlag & CLF_CONTEXT_MENU);
+	g_ChatEnabled = (bool)(g_ClientFlag & CLF_ENABLE_CHAT);
+	g_TooltipsEnabled = (bool)(g_ClientFlag & CLF_PALADIN_NECROMANCER_TOOLTIPS);
 
 	g_CharacterListScreen.UpdateContent();
 }
@@ -2725,7 +2729,7 @@ PACKET_HANDLER(ExtendedCommand)
 			if (g_World == NULL)
 				return;
 
-			Move(2);
+			Move(1);
 			uint serial = ReadUInt32BE();
 			CGameCharacter *character = g_World->FindWorldCharacter(serial);
 
