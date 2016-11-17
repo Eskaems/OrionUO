@@ -1293,6 +1293,10 @@ PACKET_HANDLER(UpdateItem)
 
 	obj->MultiBody = (graphic & 0x4000);
 	obj->Graphic = graphic & 0x3FFF;
+
+	if (graphic == 0x2006 && !count)
+		count = 1;
+
 	obj->Count = count;
 	ushort x = ReadUInt16BE();
 	ushort y = ReadUInt16BE();
@@ -1943,7 +1947,7 @@ PACKET_HANDLER(DeleteObject)
 		{
 			if (obj != NULL && sep)
 			{
-				if (obj->Count != g_ObjectInHand->Count)
+				if (obj->Count != g_ObjectInHand->DragCount)
 					g_ObjectInHand->Deleted = true;
 				else
 					g_ObjectInHand->Separated = true;
