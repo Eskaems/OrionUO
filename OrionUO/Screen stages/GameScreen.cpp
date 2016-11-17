@@ -1929,8 +1929,8 @@ bool CGameScreen::OnLeftMouseButtonDoubleClick()
 	}
 
 	if (charUnderMouse != 0)
-	{
-		if (!g_ConfigManager.DisableNewTargetSystem && (charUnderMouse != g_PlayerSerial))
+	{	
+		if (!g_ConfigManager.DisableNewTargetSystem && charUnderMouse != g_NewTargetSystem.Serial)
 		{
 			g_GumpManager.CloseGump(g_NewTargetSystem.Serial, 0, GT_TARGET_SYSTEM);
 			g_NewTargetSystem.Serial = charUnderMouse;
