@@ -723,7 +723,7 @@ MACRO_RETURN_CODE CMacroManager::Process()
 	MACRO_RETURN_CODE result = MRC_PARSE_NEXT;
 	static DWORD itemInHand[2] = { 0, 0 };
 
-	if (g_MacroPointer == NULL || g_EntryPointer == &g_GameConsole)
+	if (g_MacroPointer == NULL || (g_ConfigManager.ConsoleNeedEnter && g_EntryPointer == &g_GameConsole))
 		result = MRC_STOP;
 	else if (m_NextTimer <= g_Ticks)
 	{

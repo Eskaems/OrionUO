@@ -285,7 +285,7 @@ void COrionWindow::OnDeactivate()
 //----------------------------------------------------------------------------------
 void COrionWindow::OnCharPress(const WPARAM &wParam, const LPARAM &lParam)
 {
-	if (g_EntryPointer != &g_GameConsole && g_PluginManager.WindowProc(m_Handle, WM_CHAR, wParam, lParam))
+	if ((g_ConfigManager.ConsoleNeedEnter && g_EntryPointer != &g_GameConsole) && g_PluginManager.WindowProc(m_Handle, WM_CHAR, wParam, lParam))
 		return;
 
 	if ((iswprint(wParam) || (g_GameState >= GS_GAME && (wParam == 0x11 || wParam == 0x17))) && g_CurrentScreen != NULL && g_ScreenEffectManager.Mode == SEM_NONE)
@@ -294,7 +294,7 @@ void COrionWindow::OnCharPress(const WPARAM &wParam, const LPARAM &lParam)
 //----------------------------------------------------------------------------------
 void COrionWindow::OnKeyDown(const WPARAM &wParam, const LPARAM &lParam)
 {
-	if (g_EntryPointer != &g_GameConsole && g_PluginManager.WindowProc(m_Handle, WM_KEYDOWN, wParam, lParam))
+	if ((g_ConfigManager.ConsoleNeedEnter && g_EntryPointer != &g_GameConsole) && g_PluginManager.WindowProc(m_Handle, WM_KEYDOWN, wParam, lParam))
 		return;
 
 	if (/*!iswprint(wParam) &&*/ g_CurrentScreen != NULL && g_ScreenEffectManager.Mode == SEM_NONE)
@@ -303,7 +303,7 @@ void COrionWindow::OnKeyDown(const WPARAM &wParam, const LPARAM &lParam)
 //----------------------------------------------------------------------------------
 void COrionWindow::OnKeyUp(const WPARAM &wParam, const LPARAM &lParam)
 {
-	if (g_EntryPointer != &g_GameConsole && g_PluginManager.WindowProc(m_Handle, WM_KEYUP, wParam, lParam))
+	if ((g_ConfigManager.ConsoleNeedEnter && g_EntryPointer != &g_GameConsole) && g_PluginManager.WindowProc(m_Handle, WM_KEYUP, wParam, lParam))
 		return;
 
 	if (/*!iswprint(wParam) &&*/ g_CurrentScreen != NULL && g_ScreenEffectManager.Mode == SEM_NONE)
