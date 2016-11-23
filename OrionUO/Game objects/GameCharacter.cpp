@@ -818,6 +818,9 @@ void CGameCharacter::UpdateAnimationInfo(BYTE &dir, const bool &canChange)
 
 		if (canChange)
 		{
+			if (m_AnimationFromServer)
+				SetAnimation(0xFF);
+
 			int maxDelay = g_PathFinder.GetWalkSpeed(run, FindLayer(OL_MOUNT) != NULL) - 15;
 
 			int delay = (int)g_Ticks - (int)m_LastStepTime;
