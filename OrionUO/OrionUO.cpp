@@ -1117,9 +1117,6 @@ int COrion::Send(puchar buf, const int &size)
 	else
 		LOG_DUMP(buf, size);
 
-	g_LastPacketTime = ticks;
-	g_LastSendTime = ticks;
-
 	int result = 0;
 
 	if (type.Direction != DIR_SEND && type.Direction != DIR_BOTH)
@@ -1128,6 +1125,12 @@ int COrion::Send(puchar buf, const int &size)
 	{
 		if (g_PluginManager.PacketSend(buf, size))
 			result = g_ConnectionManager.Send(buf, size);
+	}
+
+	if (result)
+	{
+		g_LastPacketTime = ticks;
+		g_LastSendTime = ticks;
 	}
 
 	return result;
@@ -5224,7 +5227,7 @@ void COrion::RemoveRangedObjects()
 						//if (GetDistance(g_RemoveRangeXY, go) > 31)
 						g_World->RemoveObject(go);
 				}
-				else if (GetDistance(g_RemoveRangeXY, go) > objectsRange)
+				else if (GetRemoveDistance(g_RemoveRangeXY, go) > objectsRange)
 				{
 					if (g_Party.Contains(go->Serial))
 						go->RemoveRender();
