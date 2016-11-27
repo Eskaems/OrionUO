@@ -782,7 +782,6 @@ PACKET_HANDLER(CharacterList)
 	g_CharacterList.OnePerson = (bool)(g_ClientFlag & CLF_ONE_CHARACTER_SLOT);
 	//g_SendLogoutNotification = (bool)(g_ClientFlag & LFF_RE);
 	g_NPCPopupEnabled = (bool)(g_ClientFlag & CLF_CONTEXT_MENU);
-	g_ChatEnabled = (bool)(g_ClientFlag & CLF_ENABLE_CHAT);
 	g_TooltipsEnabled = (bool)(g_ClientFlag & CLF_PALADIN_NECROMANCER_TOOLTIPS);
 
 	g_CharacterListScreen.UpdateContent();
@@ -1255,10 +1254,8 @@ PACKET_HANDLER(UpdateItem)
 	uint serial = ReadUInt32BE();
 	ushort graphic = ReadUInt16BE();
 
-#if UO_ABYSS_SHARD == 1
-	if ((graphic & 0x7FFF) == 0x0E5C)
+	if (g_TheAbyss && (graphic & 0x7FFF) == 0x0E5C)
 		return;
-#endif
 
 	ushort count = 0;
 
@@ -1366,18 +1363,20 @@ PACKET_HANDLER(UpdateItemSA)
 	ushort color = ReadUInt16BE();
 	char flags = ReadUInt8();
 
+	if (g_ObjectInHand != NULL && g_ObjectInHand->Serial == serial)
+	{
+		return;
+
+		//delete g_ObjectInHand;
+		//g_ObjectInHand = NULL;
+	}
+
 	CGameItem *obj = g_World->GetWorldItem(serial);
 
 	if (obj == NULL)
 	{
 		LOG("no memory??");
 		return;
-	}
-
-	if (g_ObjectInHand != NULL && g_ObjectInHand->Serial == obj->Serial)
-	{
-		delete g_ObjectInHand;
-		g_ObjectInHand = NULL;
 	}
 
 	if (obj->Dragged)
@@ -2278,6 +2277,8 @@ PACKET_HANDLER(EnableLockedFeatures)
 		g_LockedClientFeatures = ReadUInt32BE();
 	else
 		g_LockedClientFeatures = ReadUInt16BE();
+
+	g_ChatEnabled = (bool)(g_LockedClientFeatures & LFF_T2A);
 }
 //----------------------------------------------------------------------------------
 PACKET_HANDLER(OpenContainer)
@@ -2814,6 +2815,7 @@ PACKET_HANDLER(ExtendedCommand)
 PACKET_HANDLER(DenyWalk)
 {
 	g_WalkRequestCount = 0;
+	g_PendingDelayTime = 0;
 	g_Ping = 0;
 
 	if (g_Player == NULL)
@@ -2832,6 +2834,8 @@ PACKET_HANDLER(DenyWalk)
 	g_Player->OffsetZ = 0;
 
 	g_Player->m_WalkStack.Clear();
+
+	g_World->MoveToTop(g_Player);
 }
 //----------------------------------------------------------------------------------
 PACKET_HANDLER(ConfirmWalk)
@@ -4259,6 +4263,7 @@ PACKET_HANDLER(OpenGump)
 			sscanf((char*)e, "%d %d %d %d %d", &x, &y, &graphic, &w, &h);
 
 			go = new CGUIResizepic(0, graphic, x, y, w, h);
+			go->DrawOnly = true;
 		}
 		else if (!memcmp(lowc, "checkertrans", 12))
 		{
@@ -4373,6 +4378,7 @@ PACKET_HANDLER(OpenGump)
 
 			gump->Add(new CGUIShader(g_ColorizerShader, true));
 			go = new CGUITilepic(graphic, color, x, y);
+			go->DrawOnly = true;
 		}
 		else if (!memcmp(lowc, "tilepic", 7))
 		{
@@ -4381,6 +4387,7 @@ PACKET_HANDLER(OpenGump)
 			sscanf((char*)e, "%d %d %d", &x, &y, &graphic);
 
 			go = new CGUITilepic(graphic, 0, x, y);
+			go->DrawOnly = true;
 		}
 		else if (!memcmp(lowc, "gumppictiled", 12))
 		{
@@ -4389,6 +4396,7 @@ PACKET_HANDLER(OpenGump)
 			sscanf((char*)e, "%d %d %d %d %d", &x, &y, &w, &h, &graphic);
 
 			go = new CGUIGumppicTiled(graphic, x, y, w, h);
+			go->DrawOnly = true;
 		}
 		else if (!memcmp(lowc, "gumppic", 7))
 		{
@@ -4411,6 +4419,7 @@ PACKET_HANDLER(OpenGump)
 
 			go = new CGUIGumppic(graphic, x, y);
 			go->Color = color;
+			go->DrawOnly = true;
 		}
 		else if (!memcmp(lowc, "xmfhtmlgump", 11))
 		{

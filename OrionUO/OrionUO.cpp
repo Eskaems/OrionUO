@@ -266,6 +266,11 @@ bool COrion::Install()
 	DEBUGLOG("Replaces...\n");
 	IndexReplaces();
 
+	WISP_GEOMETRY::CSize statusbarDims = GetGumpDimension(0x0804);
+
+	CGumpStatusbar::m_StatusbarDefaultWidth = statusbarDims.Width;
+	CGumpStatusbar::m_StatusbarDefaultHeight = statusbarDims.Height;
+
 	DEBUGLOG("Sort skills...\n");
 	g_SkillSort.Init();
 
@@ -711,7 +716,7 @@ void COrion::Process(const bool &rendering)
 				canRenderSelect = false;
 		}
 
-		/*if (g_World != NULL)
+		if (g_World != NULL)
 		{
 			CWalkData *wd = g_Player->m_WalkStack.m_Items;
 
@@ -726,8 +731,9 @@ void COrion::Process(const bool &rendering)
 				g_RemoveRangeXY.Y = g_Player->Y;
 			}
 
-			RemoveRangedObjects();
-		}*/
+			//RemoveRangedObjects();
+			g_GumpManager.RemoveRangedGumps();
+		}
 
 		if (rendering)
 		{

@@ -937,7 +937,6 @@ bool CAnimationManager::ExecuteDirectionGroup(CTextureAnimationDirection *direct
 		if (!imageWidth || !imageHeight)
 			continue;
 
-		uint x = 0;
 		uint y = 0;
 
 		USHORT_LIST data(imageWidth * imageHeight, 0);
@@ -963,12 +962,13 @@ bool CAnimationManager::ExecuteDirectionGroup(CTextureAnimationDirection *direct
 
 			prevLineNum = lineNum;
 
-			x = ((rowOfs >> 6) & 0x3FF) + imageCenterX;
+			uint x = ((rowOfs >> 6) & 0x03FF) + imageCenterX;
 
 			if (rowOfs & 0x8000)
-				x -= 0x400;
+				x -= 0x0400;
 
-			ushort runLength = rowHeader & 0xFFF;
+			ushort runLength = rowHeader & 0x0FFF;
+			int block = (y * imageWidth) + x;
 
 			IFOR(j, 0, runLength)
 			{
@@ -977,9 +977,12 @@ bool CAnimationManager::ExecuteDirectionGroup(CTextureAnimationDirection *direct
 				//if (color)
 				//	val = g_ColorManager.GetColor16(val, color);
 
-				ushort a = val ? 0x8000 : 0;
-				int block = y * imageWidth + (x + j);
-				data[block] = a | val;
+				if (val)
+					data[block] = 0x8000 | val;
+				else
+					data[block] = 0;
+
+				block++;
 			}
 		}
 
@@ -1007,7 +1010,6 @@ bool CAnimationManager::TestImagePixels(CTextureAnimationDirection *direction, c
 	uint imageWidth = ReadInt16LE();
 	uint imageHeight = ReadInt16LE();
 
-	uint x = 0;
 	uint y = 0;
 
 	ushort prevLineNum = 0xFFFF;
@@ -1032,7 +1034,7 @@ bool CAnimationManager::TestImagePixels(CTextureAnimationDirection *direction, c
 
 		prevLineNum = lineNum;
 
-		ushort runLength = rowHeader & 0xFFF;
+		ushort runLength = rowHeader & 0x0FFF;
 
 		if (y != checkY)
 		{
@@ -1040,14 +1042,19 @@ bool CAnimationManager::TestImagePixels(CTextureAnimationDirection *direction, c
 			continue;
 		}
 
-		x = ((rowOfs >> 6) & 0x3FF) + imageCenterX;
+		uint x = ((rowOfs >> 6) & 0x03FF) + imageCenterX;
 
 		if (rowOfs & 0x8000)
 			x -= 0x0400;
 
-		Move(checkX - x);
+		if ((uint)checkX >= x && (uint)checkX <= x + runLength)
+		{
+			Move(checkX);
 
-		return (palette[ReadUInt8()] != 0);
+			return (palette[ReadUInt8()] != 0);
+		}
+
+		Move(runLength);
 	}
 
 	return false;
@@ -1573,7 +1580,7 @@ void CAnimationManager::DrawCharacter(CGameCharacter *obj, int x, int y, int z)
 	
 	int lightOffset = 20;
 	
-	if (goi != NULL) //Draw mount
+	if (obj->IsHuman() && goi != NULL) //Draw mount
 	{
 		m_Sitting = 0;
 		lightOffset += 20;
@@ -1596,20 +1603,6 @@ void CAnimationManager::DrawCharacter(CGameCharacter *obj, int x, int y, int z)
 
 		Draw(goi, drawX, drawY, mirror, animIndex, mountID);
 		drawY += mountedHeightOffset;
-
-		switch (animGroup)
-		{
-			case PAG_FIDGET_1:
-			case PAG_FIDGET_2:
-			case PAG_FIDGET_3:
-			{
-				animGroup = PAG_ONMOUNT_STAND;
-				animIndex = 0;
-				break;
-			}
-			default:
-				break;
-		}
 	}
 	else
 	{
@@ -1837,7 +1830,7 @@ bool CAnimationManager::CharacterPixelsInXY(CGameCharacter *obj, int x, int y, i
 	int drawX = (int)(x - obj->OffsetX);
 	int drawY = (int)(y - obj->OffsetY) - (z * 4) - obj->OffsetZ;
 	
-	if (goi != NULL) //Check mount
+	if (obj->IsHuman() && goi != NULL) //Check mount
 	{
 		ushort mountID = goi->GetMountAnimation();
 
@@ -1848,20 +1841,6 @@ bool CAnimationManager::CharacterPixelsInXY(CGameCharacter *obj, int x, int y, i
 
 		if (mountID < MAX_ANIMATIONS_DATA_INDEX_COUNT)
 			drawY += m_DataIndex[mountID].MountedHeightOffset;
-
-		switch (animGroup)
-		{
-			case PAG_FIDGET_1:
-			case PAG_FIDGET_2:
-			case PAG_FIDGET_3:
-			{
-				animGroup = PAG_ONMOUNT_STAND;
-				animIndex = 0;
-				break;
-			}
-			default:
-				break;
-		}
 	}
 
 	m_AnimGroup = animGroup;
