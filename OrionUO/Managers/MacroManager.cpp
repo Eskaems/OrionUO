@@ -1237,7 +1237,7 @@ MACRO_RETURN_CODE CMacroManager::Process()
 				
 				SCAN_TYPE_OBJECT scanType = (SCAN_TYPE_OBJECT)(g_MacroPointer->SubCode - MSC_G7_HOSTLE);
 
-				CGameObject *obj = g_World->SearchWorldObject(g_NewTargetSystem.Serial, 15, scanType, (SCAN_MODE_OBJECT)(g_MacroPointer->Code - MC_SELECT_NEXT));
+				CGameObject *obj = g_World->SearchWorldObject(g_NewTargetSystem.Serial, MAX_VIEW_RANGE, scanType, (SCAN_MODE_OBJECT)(g_MacroPointer->Code - MC_SELECT_NEXT));
 
 				if (obj != NULL)
 				{
