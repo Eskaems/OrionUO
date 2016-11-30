@@ -198,7 +198,7 @@ void CGameItem::CalculateFieldColor()
 	else if (IN_RANGE(m_Graphic, 0x3914, 0x3929))
 		m_FieldColor = 0x0044;
 	//wall of stone
-	else if (m_Graphic == 0x0080 || m_Graphic ==  0x0058)
+	else if (m_Graphic == 0x0080 || m_Graphic ==  0x0057 || m_Graphic ==  0x0058)
 		m_FieldColor = 0x038A;
 }
 //----------------------------------------------------------------------------------
