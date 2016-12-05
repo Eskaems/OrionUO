@@ -12,6 +12,7 @@
 #include "OrionWindow.h"
 #include "Managers/ConfigManager.h"
 #include "Game objects/GameWorld.h"
+#include "Screen stages/GameScreen.h"
 //----------------------------------------------------------------------------------
 deque<CContainerStackItem> g_ContainerStack;
 uint g_CheckContainerStackTimer = 0;
@@ -105,8 +106,9 @@ void CContainerRect::Calculate(ushort gumpID)
 		//!Если выключено смещение - открываем гамп в правом верхнем углу клиента
 		if (!g_ConfigManager.OffsetInterfaceWindows)
 		{
-			m_X = g_OrionWindow.Size.Width - tex->Width;
-			m_Y = 0;
+			m_X = g_RenderBounds.GameWindowWidth - tex->Width - RandomInt(100);
+			m_Y = g_RenderBounds.GameWindowHeight - tex->Height - RandomIntMinMax(-50, 50);
+			
 		}
 		else //!Или вычисляем смещение и открываем в результируемых координатах
 		{
