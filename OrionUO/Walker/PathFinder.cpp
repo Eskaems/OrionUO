@@ -46,7 +46,7 @@ bool CPathFinderTest::CreateItemsList(vector<CPathObjectTest> &list, const int &
 	int bx = x % 8;
 	int by = y % 8;
 
-	bool ignoreGameCharacters = ((stepState == 1) || g_Player->IgnoreCharacters() || g_Player->Stam >= g_Player->MaxStam);
+	bool ignoreGameCharacters = ((stepState == PSS_DEAD_OR_GM) || g_Player->IgnoreCharacters() || g_Player->Stam >= g_Player->MaxStam);
 
 	for (CRenderWorldObject *obj = block->GetRender(bx, by); obj != NULL; obj = obj->m_NextXY)
 	{
@@ -59,9 +59,21 @@ bool CPathFinderTest::CreateItemsList(vector<CPathObjectTest> &list, const int &
 				CLandObject *land = (CLandObject*)obj;
 
 				uint flags = POF_IMPASSABLE_OR_SURFACE;
+				uint64 tiledataFlags = g_Orion.GetLandFlags(graphic);
 
-				if (!IsImpassable(g_Orion.GetLandFlags(graphic)))
-					flags = POF_IMPASSABLE_OR_SURFACE | POF_SURFACE | POF_BRIDGE;
+				if (stepState == PSS_ON_SEA_HORSE)
+				{
+					if (IsWet(tiledataFlags))
+						flags = POF_IMPASSABLE_OR_SURFACE | POF_SURFACE | POF_BRIDGE;
+				}
+				else
+				{
+					if (!IsImpassable(tiledataFlags))
+						flags = POF_IMPASSABLE_OR_SURFACE | POF_SURFACE | POF_BRIDGE;
+
+					if (stepState == PSS_ON_SEA_HORSE && IsNoDiagonal(tiledataFlags))
+						flags |= POF_NO_DIAGONAL;
+				}
 
 				int landMinZ = land->MinZ;
 				int landAverageZ = land->AverageZ;
@@ -79,23 +91,23 @@ bool CPathFinderTest::CreateItemsList(vector<CPathObjectTest> &list, const int &
 
 			if (obj->IsGameObject())
 			{
-				dropFlags = ((graphic >= 0x3946 && graphic <= 0x3964) || graphic == 0x0082);
-
 				CGameObject *go = (CGameObject*)obj;
 
-				if ((!go->NPC && ((CGameItem*)obj)->MultiBody) || obj->IsInternal()) //isMulti || InternalItem
-					canBeAdd = false;
-				else if (go->NPC)
+				if (go->NPC)
 				{
 					CGameCharacter *gc = (CGameCharacter*)obj;
 
-					if (!ignoreGameCharacters && !gc->Dead())
+					if (!ignoreGameCharacters && !gc->Dead() && !gc->IgnoreCharacters())
 						list.push_back(CPathObjectTest(POF_IMPASSABLE_OR_SURFACE, obj->Z, obj->Z + DEFAULT_CHARACTER_HEIGHT, DEFAULT_CHARACTER_HEIGHT, obj));
 
 					canBeAdd = false;
 				}
-				else if (stepState == 1 && (go->IsDoor() || tileInfo->Weight <= 0x5A))
+				else if (((CGameItem*)obj)->MultiBody || obj->IsInternal()) //isMulti || InternalItem
+					canBeAdd = false;
+				else if (stepState == PSS_DEAD_OR_GM && (go->IsDoor() || tileInfo->Weight <= 0x5A))
 					dropFlags = true;
+				else
+					dropFlags = ((graphic >= 0x3946 && graphic <= 0x3964) || graphic == 0x0082);
 			}
 			else
 				graphic -= 0x4000;
@@ -104,31 +116,42 @@ bool CPathFinderTest::CreateItemsList(vector<CPathObjectTest> &list, const int &
 			{
 				uint flags = 0;
 
-				if (obj->IsImpassable() || obj->IsSurface())
-					flags = POF_IMPASSABLE_OR_SURFACE;
-
-				if (!obj->IsImpassable())
+				if (stepState == PSS_ON_SEA_HORSE)
 				{
-					if (obj->IsSurface())
-						flags |= POF_SURFACE;
-
-					if (obj->IsBridge())
-						flags |= POF_BRIDGE;
+					if (obj->IsWet())
+						flags = POF_SURFACE | POF_BRIDGE;
 				}
-
-				if (stepState == 1)
+				else
 				{
-					if (graphic <= 0x0846)
+					if (obj->IsImpassable() || obj->IsSurface())
+						flags = POF_IMPASSABLE_OR_SURFACE;
+
+					if (!obj->IsImpassable())
 					{
-						if (!(graphic != 0x0846 && graphic != 0x0692 && (graphic <= 0x06F4 || graphic > 0x06F6)))
+						if (obj->IsSurface())
+							flags |= POF_SURFACE;
+
+						if (obj->IsBridge())
+							flags |= POF_BRIDGE;
+					}
+
+					if (stepState == PSS_DEAD_OR_GM)
+					{
+						if (graphic <= 0x0846)
+						{
+							if (!(graphic != 0x0846 && graphic != 0x0692 && (graphic <= 0x06F4 || graphic > 0x06F6)))
+								dropFlags = true;
+						}
+						else if (graphic == 0x0873)
 							dropFlags = true;
 					}
-					else if (graphic == 0x0873)
-						dropFlags = true;
-				}
 
-				if (dropFlags)
-					flags &= 0xFFFFFFFE;
+					if (dropFlags)
+						flags &= 0xFFFFFFFE;
+
+					if (stepState == PSS_FLYING && obj->IsNoDiagonal())
+						flags |= POF_NO_DIAGONAL;
+				}
 
 				if (flags)
 				{
@@ -145,7 +168,7 @@ bool CPathFinderTest::CreateItemsList(vector<CPathObjectTest> &list, const int &
 		}
 	}
 
-	return true;
+	return !list.empty();
 }
 //----------------------------------------------------------------------------------
 int CPathFinderTest::CalculateMinMaxZ(int &minZ, int &maxZ, int newX, int newY, const int &currentZ, int newDirection, const int &stepState)
@@ -208,20 +231,20 @@ int CPathFinderTest::CalculateMinMaxZ(int &minZ, int &maxZ, int newX, int newY, 
 //----------------------------------------------------------------------------------
 bool CPathFinderTest::CalculateNewZ(const int &x, const int &y, char &z, const int &direction)
 {
-	int stepState = 0;
+	int stepState = PSS_NORMAL;
 
 	if (g_Player->Dead() || g_Player->Graphic == 0x03DB)
-		stepState = 1;
+		stepState = PSS_DEAD_OR_GM;
 	else
 	{
-		if (g_Player->Flying())
-			stepState = 3;
+		if (g_Player->Flying()) // && no mount?
+			stepState = PSS_FLYING;
 		else
 		{
 			CGameItem *mount = g_Player->FindLayer(OL_MOUNT);
 
 			if (mount != NULL && mount->Graphic == 0x3EB3) //Sea horse
-				stepState = 2;
+				stepState = PSS_ON_SEA_HORSE;
 		}
 	}
 
@@ -256,7 +279,6 @@ bool CPathFinderTest::CalculateNewZ(const int &x, const int &y, char &z, const i
 
 	int resultZ = -128;
 
-	DebugMsg("z=%i\n", z);
 	if (z < minZ)
 		z = (char)minZ;
 
@@ -265,13 +287,26 @@ bool CPathFinderTest::CalculateNewZ(const int &x, const int &y, char &z, const i
 
 	int listSize = (int)list.size();
 
-	DebugMsg("listSize=%i (min=%i max=%i)\n", listSize, minZ, maxZ);
-
 	IFOR(i, 0, listSize)
 	{
 		const CPathObjectTest &obj = list[i];
 
-		DebugMsg("obj; %02X %02X %02X %02X (0x%04X)\n", obj.Flags, obj.Z, obj.AverageZ, obj.Height, (obj.m_Object ? obj.m_Object->Graphic : 0));
+		if ((obj.Flags & POF_NO_DIAGONAL) && stepState == PSS_FLYING)
+		{
+			int objAverageZ = obj.AverageZ;
+
+			int delta = abs(objAverageZ - (int)z);
+
+			if (delta <= 25)
+			{
+				if (objAverageZ != -128)
+					resultZ = objAverageZ;
+				else
+					resultZ = currentZ;
+
+				break;
+			}
+		}
 
 		if (obj.Flags & POF_IMPASSABLE_OR_SURFACE)
 		{
@@ -311,7 +346,6 @@ bool CPathFinderTest::CalculateNewZ(const int &x, const int &y, char &z, const i
 		}
 	}
 
-	DebugMsg("resultZ=%i\n", resultZ);
 	z = (char)resultZ;
 
 	return (resultZ != -128);
