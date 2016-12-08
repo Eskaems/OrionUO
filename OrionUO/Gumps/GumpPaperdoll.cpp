@@ -469,7 +469,7 @@ void CGumpPaperdoll::UpdateContent()
 
 	g_ColorizerShader->Use();
 
-	if (obj->IsHuman())
+	//if (obj->IsHuman())
 	{
 		CGameItem *slotObjects[5] = { 0 };
 
