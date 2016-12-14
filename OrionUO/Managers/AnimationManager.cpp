@@ -549,7 +549,7 @@ void CAnimationManager::InitIndexReplaces(puint verdata)
 				if (checkIndex >= MAX_ANIMATIONS_DATA_INDEX_COUNT || !m_DataIndex[checkIndex].Offset)
 					continue;
 
-				//memcpy(&m_DataIndex[index], &m_DataIndex[checkIndex], sizeof(CIndexAnimation));
+				memcpy(&m_DataIndex[index], &m_DataIndex[checkIndex], sizeof(CIndexAnimation));
 
 				if (g_PacketManager.ClientVersion < CV_500A)
 				{
