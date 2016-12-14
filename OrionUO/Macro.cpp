@@ -426,7 +426,8 @@ const char *CMacro::m_MacroActionName[MACRO_ACTION_NAME_COUNT] =
 	"BandageSelf",
 	"BandageTarget",
 	"ToggleGargoyleFlying",
-	"SelectSelf"
+	"SelectSelf",
+	"TargetMousePosition"
 };
 //----------------------------------------------------------------------------------
 const char *CMacro::m_MacroAction[MACRO_ACTION_COUNT] =

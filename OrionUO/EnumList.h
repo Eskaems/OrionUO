@@ -807,7 +807,8 @@ enum MACRO_CODE
 	MC_BANDAGE_SELF,
 	MC_BANDAGE_TARGET,
 	MC_TOGGLE_GARGOYLE_FLYING,
-	MC_SELECT_SELF
+	MC_SELECT_SELF,
+	MC_TARGET_MOUSE_POSITION
 };
 //----------------------------------------------------------------------------------
 enum MACRO_SUB_CODE

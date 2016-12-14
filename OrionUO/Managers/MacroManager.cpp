@@ -27,6 +27,7 @@
 #include "../Wisp/WispBinaryFileWritter.h"
 #include "../Wisp/WispTextFileParser.h"
 #include "../TextEngine/GameConsole.h"
+#include "../SelectedObject.h"
 
 #include <Shlwapi.h>
 #pragma comment(lib, "Shlwapi.lib")
@@ -1301,6 +1302,36 @@ MACRO_RETURN_CODE CMacroManager::Process()
 
 					g_GumpManager.AddGump(new CGumpTargetSystem(g_NewTargetSystem.Serial, g_NewTargetSystem.GumpX, g_NewTargetSystem.GumpY));
 				}
+				break;
+			}
+			case MC_TARGET_MOUSE_POSITION:
+			{
+				if (m_WaitForTargetTimer == 0)
+					m_WaitForTargetTimer = g_Ticks + WAIT_FOR_TARGET_DELAY;
+
+				if (g_Target.IsTargeting())
+				{
+					if (g_SelectedObject.Gump() != NULL && g_SelectedObject.Gump()->GumpType == GT_STATUSBAR)
+					{
+						g_Target.SendTargetObject(g_SelectedObject.Gump()->Serial);
+					}
+					else if (g_SelectedObject.Object() != NULL)
+					{
+						if (g_SelectedObject.Object()->IsWorldObject())
+						{
+							CRenderWorldObject *selRwo = (CRenderWorldObject*)g_SelectedObject.Object();
+						
+							g_Target.SendTargetTile(0, selRwo->X, selRwo->Y, selRwo->Z);
+						}
+					}
+
+					m_WaitForTargetTimer = 0;
+				}
+				else if (m_WaitForTargetTimer < g_Ticks)
+					m_WaitForTargetTimer = 0;
+				else
+					result = MRC_BREAK_PARSER;
+
 				break;
 			}
 			default:
