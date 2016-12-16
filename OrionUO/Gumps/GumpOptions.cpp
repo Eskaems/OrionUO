@@ -464,6 +464,11 @@ void CGumpOptions::InitToolTip()
 				g_ToolTip.Set(L"Show debugging information in game window and highlight the land/static tiles", g_SelectedObject.Object());
 				break;
 			}
+			case ID_GO_P2_DEV_MODE_4:
+			{
+				g_ToolTip.Set(L"Show FPS and highlight the land/static tiles", g_SelectedObject.Object());
+				break;
+			}
 			case ID_GO_P3_USE_TOOLTIP:
 			{
 				g_ToolTip.Set(L"Use the tooltips", g_SelectedObject.Object());
@@ -812,7 +817,11 @@ void CGumpOptions::DrawPage2()
 	devRadio->Checked = (g_DeveloperMode == DM_DEBUGGING);
 	devRadio->SetTextParameters(0, L"Debugging", g_OptionsTextColor);
 
-
+	devRadio = (CGUIRadio*)Add(new CGUIRadio(ID_GO_P2_DEV_MODE_4, 0x00D0, 0x00D1, 0x00D2, 364, 64));
+	devRadio->Checked = (g_DeveloperMode == DM_FPS_AND_TILE_INFO);
+	devRadio->SetTextParameters(0, L"FPS and Info", g_OptionsTextColor);
+	
+	
 
 	CGUIHTMLGump *html = (CGUIHTMLGump*)Add(new CGUIHTMLGump(0xFFFFFFFF, 0x0BB8, 64, 90, 500, 300, false, true));
 
@@ -2234,7 +2243,8 @@ void CGumpOptions::GUMP_CHECKBOX_EVENT_C
 				g_OptionsDeveloperMode = DM_SHOW_FPS_ONLY;
 			else if (serial == ID_GO_P2_DEV_MODE_3)
 				g_OptionsDeveloperMode = DM_DEBUGGING;
-			
+			else if (serial == ID_GO_P2_DEV_MODE_4)
+				g_OptionsDeveloperMode = DM_FPS_AND_TILE_INFO;
 
 			break;
 		}
@@ -2379,7 +2389,9 @@ void CGumpOptions::GUMP_RADIO_EVENT_C
 				g_OptionsDeveloperMode = DM_SHOW_FPS_ONLY;
 			else if (serial == ID_GO_P2_DEV_MODE_3)
 				g_OptionsDeveloperMode = DM_DEBUGGING;
-
+			else if (serial == ID_GO_P2_DEV_MODE_4)
+				g_OptionsDeveloperMode = DM_FPS_AND_TILE_INFO;
+				
 			break;
 		}
 		case 3: //Language

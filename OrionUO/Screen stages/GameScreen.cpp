@@ -1608,6 +1608,30 @@ void CGameScreen::Render(const bool &mode)
 				g_FontManager.DrawA(3, dbf, 0x35, 20, 102);
 			}
 		}
+		if (g_DeveloperMode == DM_FPS_AND_TILE_INFO)
+		{
+			char dbf[150] = { 0 };
+
+			sprintf_s(dbf, "FPS=%i", FPScount);
+
+			g_FontManager.DrawA(3, dbf, 0x35, g_RenderBounds.GameWindowPosX + g_RenderBounds.GameWindowWidth + 10, g_RenderBounds.GameWindowPosY + 10);
+			
+			if (g_SelectedObject.Object() != NULL && g_SelectedObject.Object()->IsWorldObject())
+			{
+				CRenderWorldObject *selRwo = (CRenderWorldObject*)g_SelectedObject.Object();
+				CLandObject *land = selRwo->LandObjectPtr();
+
+				int tz = selRwo->Z;
+
+				//Если это тайл текстуры
+				if (land != NULL && land->IsStretched)
+					tz = (char)land->Serial;
+
+				sprintf_s(dbf, "G=0x%04X X=%i Y=%i Z=%i (%i)", selRwo->Graphic, selRwo->X, selRwo->Y, selRwo->Z, tz);
+
+				g_FontManager.DrawA(3, dbf, 0x35, g_RenderBounds.GameWindowPosX + g_RenderBounds.GameWindowWidth + 10, g_RenderBounds.GameWindowPosY + 30);
+			}
+		}
 #endif //UO_DEBUG_INFO!=0
 
 		g_GumpManager.Draw(false);

@@ -50,7 +50,7 @@ void CStaticObject::Draw(const int &x, const int &y)
 {
 	m_RenderGraphic = m_Graphic - 0x4000;
 
-	if (g_DeveloperMode == DM_DEBUGGING && g_SelectedObject.Object() == this)
+	if ((g_DeveloperMode == DM_DEBUGGING || g_DeveloperMode == DM_FPS_AND_TILE_INFO) && g_SelectedObject.Object() == this)
 		m_RenderColor = SELECT_STATIC_COLOR;
 	else
 		m_RenderColor = m_Color;

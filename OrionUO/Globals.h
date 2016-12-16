@@ -245,7 +245,7 @@ extern uint g_LockedClientFeatures;
 extern bool g_GeneratedMouseDown;
 extern bool g_DrawFoliage;
 
-enum DEVELOPER_MODE{DM_NO_DEBUG = 0, DM_SHOW_FPS_ONLY, DM_DEBUGGING};
+enum DEVELOPER_MODE{DM_NO_DEBUG = 0, DM_SHOW_FPS_ONLY, DM_DEBUGGING, DM_FPS_AND_TILE_INFO};
 extern DEVELOPER_MODE g_DeveloperMode;
 extern DEVELOPER_MODE g_OptionsDeveloperMode;
 
