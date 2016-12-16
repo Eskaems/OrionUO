@@ -40,6 +40,7 @@
 #include "../Gumps/GumpBook.h"
 #include "../Gumps/GumpSecureTrading.h"
 #include "../Gumps/GumpWorldMap.h"
+#include "../Gumps/GumpSkill.h"
 //----------------------------------------------------------------------------------
 CGumpManager g_GumpManager;
 //----------------------------------------------------------------------------------
@@ -816,7 +817,7 @@ void CGumpManager::OnRightMouseButtonUp(const bool &blocked)
 
 	QFOR(gump, m_Items, CGump*)
 	{
-		if (g_PressedObject.RightGump() == gump && !gump->NoProcess && !gump->NoClose && gump->CanBeMoved())
+		if (g_PressedObject.RightGump() == gump && !gump->NoProcess && !gump->NoClose && (gump->CanBeMoved() || gump->GumpType == GT_GENERIC))
 		{
 			//gump->OnClose();
 			switch (gump->GumpType)
@@ -1251,6 +1252,14 @@ void CGumpManager::Load(const string &path)
 					showFullTextConsoleType = file.ReadUInt8();
 					break;
 				}
+				case GT_SKILL:
+				{
+					uint serial = file.ReadUInt32LE();
+
+					gump = new CGumpSkill(serial, gumpX, gumpY);
+
+					break;
+				}
 				default:
 					break;
 			}
@@ -1512,6 +1521,17 @@ void CGumpManager::Save(const string &path)
 
 				writter.WriteBuffer();
 				count++;
+			}
+			case GT_SKILL:
+			{
+				SaveDefaultGumpProperties(writter, gump, 16);
+
+				writter.WriteUInt32LE(gump->Serial);
+				writter.WriteBuffer();
+
+				count++;
+
+				break;
 			}
 			default:
 				break;

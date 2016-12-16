@@ -676,7 +676,7 @@ void CPacketManager::PluginReceiveHandler(puchar buf, const int &size)
 //----------------------------------------------------------------------------------
 PACKET_HANDLER(LoginError)
 {
-	if (g_GameState == GS_MAIN_CONNECT || g_GameState == GS_SERVER_CONNECT)
+	if (g_GameState == GS_MAIN_CONNECT || g_GameState == GS_SERVER_CONNECT || g_GameState == GS_GAME_CONNECT)
 	{
 		g_ConnectionScreen.ConnectionFailed = true;
 		g_ConnectionScreen.ErrorCode = ReadUInt8();
@@ -1345,7 +1345,7 @@ PACKET_HANDLER(UpdateItem)
 	}
 
 	if (obj->MultiBody)
-		obj->WantUpdateMulti = ((oldGraphic != obj->Graphic) || (obj->X != x) || (obj->Y != y) || (obj->Z != z));
+		obj->WantUpdateMulti = ((obj->m_Items == NULL) || (oldGraphic != obj->Graphic) || (obj->X != x) || (obj->Y != y) || (obj->Z != z));
 
 	obj->X = x;
 	obj->Y = y;
@@ -1413,7 +1413,7 @@ PACKET_HANDLER(UpdateItemSA)
 	obj->Count = count;
 
 	if (obj->MultiBody)
-		obj->WantUpdateMulti = ((oldGraphic != obj->Graphic) || (obj->X != x) || (obj->Y != y) || (obj->Z != z));
+		obj->WantUpdateMulti = ((obj->m_Items == NULL) || (oldGraphic != obj->Graphic) || (obj->X != x) || (obj->Y != y) || (obj->Z != z));
 
 	obj->X = x;
 	obj->Y = y;
@@ -1528,10 +1528,10 @@ PACKET_HANDLER(UpdateObject)
 		item->MultiBody = (graphic & 0x4000);
 
 		if (item->MultiBody)
-			item->WantUpdateMulti = ((oldGraphic != obj->Graphic) || (obj->X != newX) || (obj->Y != newY) || (obj->Z != newZ));
-
-		obj->OnGraphicChange(changeGraphicDir);
+			item->WantUpdateMulti = ((obj->m_Items == NULL) || (oldGraphic != obj->Graphic) || (obj->X != newX) || (obj->Y != newY) || (obj->Z != newZ));
 	}
+
+	obj->OnGraphicChange(changeGraphicDir);
 
 	obj->Color = ReadUInt16BE();
 
@@ -1985,11 +1985,7 @@ PACKET_HANDLER(DeleteObject)
 	uint serial = ReadUInt32BE();
 
 	if (serial == g_PlayerSerial)
-	{
-		g_Orion.DisconnectGump();
-		g_Orion.Disconnect();
 		return;
-	}
 
 	CGameObject *obj = g_World->FindWorldObject(serial);
 
@@ -4108,6 +4104,8 @@ PACKET_HANDLER(OpenMenuGump)
 
 		gump->Add(new CGUIGumppic(0x0910, 0, 0));
 
+		gump->Add(new CGUIColoredPolygone(0, 0, 40, 42, 217, 49, 0xFF000001));
+
 		CGUIText *text = (CGUIText*)gump->Add(new CGUIText(0x0386, 39, 18));
 		text->CreateTextureA(1, name, 200, TS_LEFT, UOFONT_FIXED);
 
@@ -4422,9 +4420,9 @@ PACKET_HANDLER(OpenGump)
 			if (color)
 				color++;
 
-			go = new CGUIGenericTextEntry(index, number, color, x, y, w, length);
+			go = new CGUIGenericTextEntry(index + 1, number, color, x, y, w, length);
 			((CGUIGenericTextEntry*)go)->CheckOnSerial = true;
-			gump->Add(new CGUIHitBox(index, x, y, w, h));
+			gump->Add(new CGUIHitBox(index + 1, x, y, w, h));
 		}
 		else if (!memcmp(lowc, "textentry", 9))
 		{
@@ -4435,9 +4433,9 @@ PACKET_HANDLER(OpenGump)
 			if (color)
 				color++;
 
-			go = new CGUIGenericTextEntry(index, number, color, x, y);
+			go = new CGUIGenericTextEntry(index + 1, number, color, x, y);
 			((CGUIGenericTextEntry*)go)->CheckOnSerial = true;
-			gump->Add(new CGUIHitBox(index, x, y, w, h));
+			gump->Add(new CGUIHitBox(index + 1, x, y, w, h));
 		}
 		else if (!memcmp(lowc, "text", 4))
 		{

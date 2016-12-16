@@ -16,6 +16,7 @@
 #include <tchar.h>
 #include "Resource.h"
 #include "Screen stages/BaseScreen.h"
+#include "Screen stages/MainScreen.h"
 #include "SelectedObject.h"
 #include "PressedObject.h"
 #include "Constants.h"
@@ -268,6 +269,7 @@ void COrionWindow::OnDragging()
 //----------------------------------------------------------------------------------
 void COrionWindow::OnActivate()
 {
+	g_Orion.ResumeSound();
 	SetRenderTimerDelay(g_FrameDelay[1]);
 
 	if (!g_PluginManager.Empty())
@@ -276,6 +278,7 @@ void COrionWindow::OnActivate()
 //----------------------------------------------------------------------------------
 void COrionWindow::OnDeactivate()
 {
+	g_Orion.PauseSound();
 	if (g_ConfigManager.ReduceFPSUnactiveWindow)
 		SetRenderTimerDelay(g_FrameDelay[0]);
 
@@ -291,7 +294,12 @@ void COrionWindow::OnCharPress(const WPARAM &wParam, const LPARAM &lParam)
 	if ((iswprint(wParam) || (g_GameState >= GS_GAME && (wParam == 0x11 || wParam == 0x17))) && g_CurrentScreen != NULL && g_ScreenEffectManager.Mode == SEM_NONE)
 		g_CurrentScreen->OnCharPress(wParam, lParam);
 	else if (wParam == 0x16 && g_EntryPointer != NULL)
-		g_EntryPointer->Paste();
+	{
+		if (g_GameState == GS_MAIN)
+			g_MainScreen.Paste();
+		else
+			g_EntryPointer->Paste();
+	}
 }
 //----------------------------------------------------------------------------------
 void COrionWindow::OnKeyDown(const WPARAM &wParam, const LPARAM &lParam)

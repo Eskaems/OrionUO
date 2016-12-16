@@ -25,6 +25,11 @@ class COrion
 private:
 	uint m_CRC_Table[256];
 
+	uchar m_StaticTilesFilterFlags[0x10000];
+
+	USHORT_LIST m_StumpTiles;
+	USHORT_LIST m_CaveTiles;
+
 	deque<CIndexObjectStatic*> m_StaticAnimList;
 
 	deque<CIndexObject*> m_UsedLandList;
@@ -78,6 +83,10 @@ private:
 	void ClearUnusedTextures();
 
 	void GetCurrentLocale();
+
+	ushort TextToGraphic(const char *text);
+
+	void CheckStaticTileFilterFiles();
 
 public:
 	COrion();
@@ -404,7 +413,9 @@ public:
 	//Переход по веб-ссылке
 	void GoToWebLink(const string &url);
 
+	void ResumeSound();
 
+	void PauseSound();
 
 	//Проиграть музыку mp3 либо midi
 	void PlayMusic(const int &index, const bool &warmode = false);
