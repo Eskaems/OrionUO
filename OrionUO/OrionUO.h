@@ -90,6 +90,8 @@ private:
 
 	void CheckStaticTileFilterFiles();
 
+	string DecodeArgumentString(const char *text, const int &length);
+
 	void ParseCommandLine();
 
 public:
@@ -101,6 +103,8 @@ public:
 
 	//Данные из тайлдаты по статике
 	vector<STATIC_GROUP> m_StaticData;
+
+	static UINT_LIST FindPattern(puchar ptr, const int &size, const UCHAR_LIST &pattern);
 
 	bool Install();
 	void Uninstall();
@@ -498,6 +502,10 @@ public:
 	void RequestQuestGump();
 
 	void DisconnectGump();
+
+	void OpenCombatBookGump();
+
+	void OpenRacialAbilitiesBookGump();
 };
 //----------------------------------------------------------------------------------
 extern COrion g_Orion;

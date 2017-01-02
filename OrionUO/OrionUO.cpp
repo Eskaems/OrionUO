@@ -88,6 +88,8 @@
 #include "ServerList.h"
 #include "Gumps/GumpNotify.h"
 #include "ExceptionFilter.h"
+#include "Gumps/GumpCombatBook.h"
+#include "Gumps/GumpRacialAbilitiesBook.h"
 //----------------------------------------------------------------------------------
 typedef void __cdecl PLUGIN_INIT_TYPE(STRING_LIST&, STRING_LIST&, UINT_LIST&);
 //----------------------------------------------------------------------------------
@@ -137,8 +139,24 @@ uint COrion::GetFileHashCode(uint address, uint size)
 	return (crc & 0xFFFFFFFF);
 }
 //----------------------------------------------------------------------------------
+string COrion::DecodeArgumentString(const char *text, const int &length)
+{
+	string result = "";
+
+	for (int i = 0; i < length; i += 2)
+	{
+		char buf[5] = { '0', 'x', text[i], text[i + 1], 0 };
+
+		char *end = NULL;
+		result += (char)strtoul(buf, &end, 16);
+	}
+
+	return result;
+}
+//----------------------------------------------------------------------------------
 void COrion::ParseCommandLine()
 {
+	bool fastLogin = false;
 	int argc = 0;
 	LPWSTR *args = CommandLineToArgvW(GetCommandLineW(), &argc);
 
@@ -147,32 +165,86 @@ void COrion::ParseCommandLine()
 		if (!args[i] || *args[i] != L'-')
 			continue;
 
-		string str = ToString(ToLowerW(args[i] + 1));
+		string str = ToString(args[i] + 1);
 
 		WISP_FILE::CTextFileParser parser("", " ,:", "", "");
 
 		STRING_LIST strings = parser.GetTokens(str.c_str());
 
-		if (str.find("login:") == 0)
+		if (!strings.size())
+			continue;
+
+		str = ToLowerA(strings[0]);
+		bool haveParam = (strings.size() > 1);
+		bool have2Param = (strings.size() > 2);
+
+		if (have2Param)
 		{
-			if (strings.size() >= 3)
+			if (str == "login")
 			{
 				m_DefaultLogin = strings[1];
 				m_DefaultPort = atoi(strings[2].c_str());
 			}
+			else if (str == "proxyhost")
+			{
+				g_ConnectionManager.UseProxy = true;
+				g_ConnectionManager.ProxyAddress = strings[1];
+				g_ConnectionManager.ProxyPort = atoi(strings[2].c_str());
+			}
+			else if (str == "proxyaccount")
+			{
+				g_ConnectionManager.ProxySocks5 = true;
+				g_ConnectionManager.ProxyAccount = DecodeArgumentString(strings[1].c_str(), strings[1].length());
+				g_ConnectionManager.ProxyPassword = DecodeArgumentString(strings[2].c_str(), strings[2].length());
+			}
+			else if (str == "account")
+				g_MainScreen.SetAccounting(DecodeArgumentString(strings[1].c_str(), strings[1].length()), DecodeArgumentString(strings[2].c_str(), strings[2].length()));
 		}
-		else if (str.find("autologin") == 0)
+		else if (str == "autologin")
 		{
 			bool enabled = true;
 
-			if (strings.size() > 1)
+			if (haveParam)
 				enabled = atoi(strings[1].c_str());
 
 			g_MainScreen.m_AutoLogin->Checked = enabled;
 		}
+		else if (str == "savepassword")
+		{
+			bool enabled = true;
+
+			if (haveParam)
+				enabled = atoi(strings[1].c_str());
+
+			g_MainScreen.m_SavePassword->Checked = enabled;
+		}
+		else if (str == "fastlogin")
+			fastLogin = true;
 	}
 
 	LocalFree(args);
+
+	if (fastLogin)
+		g_OrionWindow.CreateTimer(COrionWindow::FASTLOGIN_TIMER_ID, 50);
+}
+//----------------------------------------------------------------------------------
+UINT_LIST COrion::FindPattern(puchar ptr, const int &size, const UCHAR_LIST &pattern)
+{
+	UINT_LIST result;
+
+	int patternSize = pattern.size();
+
+	int count = size - patternSize - 1;
+
+	IFOR(i, 0, count)
+	{
+		if (!memcmp(&ptr[0], &pattern[0], patternSize))
+			result.push_back(0x00400000 + i);
+
+		ptr++;
+	}
+
+	return result;
 }
 //----------------------------------------------------------------------------------
 bool COrion::Install()
@@ -5280,5 +5352,39 @@ void COrion::DisconnectGump()
 
 	g_Orion.InitScreen(GS_GAME_BLOCKED);
 	g_GameBlockedScreen.Code = 0;
+}
+//----------------------------------------------------------------------------------
+void COrion::OpenCombatBookGump()
+{
+	int gameWindowCenterX = (g_ConfigManager.GameWindowX - 4) + g_ConfigManager.GameWindowWidth / 2;
+	int gameWindowCenterY = (g_ConfigManager.GameWindowY - 4) + g_ConfigManager.GameWindowHeight / 2;
+
+	int x = gameWindowCenterX - 200;
+	int y = gameWindowCenterY - 100;
+
+	if (x < 0)
+		x = 0;
+
+	if (y < 0)
+		y = 0;
+
+	g_GumpManager.AddGump(new CGumpCombatBook(x, y));
+}
+//----------------------------------------------------------------------------------
+void COrion::OpenRacialAbilitiesBookGump()
+{
+	int gameWindowCenterX = (g_ConfigManager.GameWindowX - 4) + g_ConfigManager.GameWindowWidth / 2;
+	int gameWindowCenterY = (g_ConfigManager.GameWindowY - 4) + g_ConfigManager.GameWindowHeight / 2;
+
+	int x = gameWindowCenterX - 200;
+	int y = gameWindowCenterY - 100;
+
+	if (x < 0)
+		x = 0;
+
+	if (y < 0)
+		y = 0;
+
+	g_GumpManager.AddGump(new CGumpRacialAbilitiesBook(x, y));
 }
 //----------------------------------------------------------------------------------

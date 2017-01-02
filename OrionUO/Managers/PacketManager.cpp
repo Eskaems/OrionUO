@@ -865,6 +865,9 @@ PACKET_HANDLER(EnterWorld)
 		g_Party.Inviter = 0;
 		g_Party.Clear();
 
+		g_Ability[0] = 4;
+		g_Ability[1] = 10;
+
 		g_ResizedGump = NULL;
 	}
 
@@ -1608,19 +1611,21 @@ PACKET_HANDLER(UpdateObject)
 		obj2->MapIndex = g_CurrentMap;
 
 		graphic = ReadUInt16BE();
+		ushort color = 0;
 
 		uchar layer = ReadUInt8();
 
 		if (m_ClientVersion >= CV_70331)
-			obj2->Color = ReadUInt16BE();
+			color = ReadUInt16BE();
 		else if (graphic & 0x8000)
 		{
 			graphic &= 0x7FFF;
 
-			obj2->Color = ReadUInt16BE();
+			color = ReadUInt16BE();
 		}
 
 		obj2->Graphic = graphic;
+		obj2->Color = color;
 
 		g_World->PutEquipment(obj2, obj, layer);
 		obj2->OnGraphicChange();
@@ -1634,6 +1639,9 @@ PACKET_HANDLER(UpdateObject)
 
 		serial = ReadUInt32BE();
 	}
+
+	if (obj->IsPlayer())
+		g_Player->UpdateAbilities();
 
 	SendMegaClilocRequests(megaClilocRequestList);
 }
@@ -1682,6 +1690,9 @@ PACKET_HANDLER(EquipItem)
 		obj->Clear();
 	else if (layer < OL_MOUNT)
 		g_GumpManager.UpdateContent(cserial, 0, GT_PAPERDOLL);
+
+	if (cserial == g_PlayerSerial && (layer == OL_1_HAND || layer == OL_2_HAND))
+		g_Player->UpdateAbilities();
 }
 //----------------------------------------------------------------------------------
 PACKET_HANDLER(UpdateContainedItem)
@@ -2017,6 +2028,7 @@ PACKET_HANDLER(DeleteObject)
 
 	if (obj != NULL)
 	{
+		bool updateAbilities = false;
 		uint cont = obj->Container;
 
 		if (cont != 0xFFFFFFFF)
@@ -2025,6 +2037,12 @@ PACKET_HANDLER(DeleteObject)
 
 			if (top != NULL)
 			{
+				if (top->IsPlayer() && !obj->NPC)
+				{
+					CGameItem *item = (CGameItem*)obj;
+					updateAbilities = (item->Layer == OL_1_HAND || item->Layer == OL_2_HAND);
+				}
+
 				CGameObject *tradeBox = top->FindSecureTradeBox();
 
 				if (tradeBox != NULL)
@@ -2073,7 +2091,12 @@ PACKET_HANDLER(DeleteObject)
 		if (obj->NPC && g_Party.Contains(obj->Serial))
 			obj->RemoveRender();
 		else
+		{
 			g_World->RemoveObject(obj);
+
+			if (updateAbilities)
+				g_Player->UpdateAbilities();
+		}
 	}
 }
 //----------------------------------------------------------------------------------
@@ -2803,6 +2826,16 @@ PACKET_HANDLER(ExtendedCommand)
 						spellbook->AddItem(spellItem);
 					}
 				}
+			}
+
+			break;
+		}
+		case 0x21:
+		{
+			IFOR(i, 0, 2)
+			{
+				g_AbilityList[g_Ability[i]] = g_AbilityList[g_Ability[i]] & 0x00FF;
+				g_GumpManager.UpdateContent(i, 0, GT_ABILITY);
 			}
 
 			break;
