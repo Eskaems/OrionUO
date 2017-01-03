@@ -1293,6 +1293,9 @@ PACKET_HANDLER(UpdateItem)
 		g_ObjectInHand = NULL;
 	}
 
+	g_World->RemoveFromContainer(obj);
+	obj->Container = 0xFFFFFFFF;
+
 	if (obj->Dragged)
 		g_GumpManager.CloseGump(serial, 0, GT_DRAG);
 
@@ -1398,6 +1401,9 @@ PACKET_HANDLER(UpdateItemSA)
 		LOG("no memory??");
 		return;
 	}
+
+	g_World->RemoveFromContainer(obj);
+	obj->Container = 0xFFFFFFFF;
 
 	if (obj->Dragged)
 		g_GumpManager.CloseGump(serial, 0, GT_DRAG);
@@ -2092,6 +2098,26 @@ PACKET_HANDLER(DeleteObject)
 			obj->RemoveRender();
 		else
 		{
+			if (obj->IsCorpse())
+			{
+				CGameItem *fake = new CGameItem(1);
+
+				fake->Graphic = 0x2006;
+				fake->Color = obj->Color;
+				fake->Count = obj->Count;
+				fake->X = obj->X;
+				fake->Y = obj->Y;
+				fake->Z = obj->Z;
+				fake->Layer = ((CGameItem*)obj)->Layer;
+				fake->RenderQueueIndex = 6;
+				fake->UsedLayer = ((CGameItem*)obj)->UsedLayer;
+				fake->AnimIndex = 0;
+				fake->FieldColor = 1;
+
+				g_World->m_Items->AddObject(fake);
+				g_MapManager->AddRender(fake);
+			}
+
 			g_World->RemoveObject(obj);
 
 			if (updateAbilities)
@@ -3645,12 +3671,42 @@ PACKET_HANDLER(DisplayDeath)
 	uint serial = ReadUInt32BE();
 	uint corpseSerial = ReadUInt32BE();
 
-	CGameItem *obj = g_World->FindWorldItem(corpseSerial);
+	if (!corpseSerial)
+	{
+		if (serial < 0x40000000)
+		{
+			CGameCharacter *owner = g_World->FindWorldCharacter(serial);
 
-	if (obj != NULL)
-		obj->AnimIndex = 0;
+			if (owner != NULL)
+			{
+				CGameItem *obj = new CGameItem(1);
+
+				obj->Graphic = 0x2006;
+				obj->Color = owner->Color;
+				obj->Count = owner->Graphic;
+				obj->X = owner->X;
+				obj->Y = owner->Y;
+				obj->Z = owner->Z;
+				obj->Layer = owner->Direction;
+				obj->RenderQueueIndex = 6;
+				obj->UsedLayer = (ReadUInt32BE() ? 1 : 0);
+				obj->AnimIndex = 0;
+				obj->FieldColor = 1;
+
+				g_World->m_Items->AddObject(obj);
+				g_MapManager->AddRender(obj);
+			}
+		}
+	}
 	else
-		g_CorpseSerialList.push_back(pair<uint, uint>(corpseSerial, g_Ticks + 1000));
+	{
+		CGameItem *obj = g_World->FindWorldItem(corpseSerial);
+
+		if (obj != NULL)
+			obj->AnimIndex = 0;
+		else
+			g_CorpseSerialList.push_back(pair<uint, uint>(corpseSerial, g_Ticks + 1000));
+	}
 }
 //----------------------------------------------------------------------------------
 PACKET_HANDLER(OpenChat)
