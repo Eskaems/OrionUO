@@ -232,10 +232,7 @@ void CGameObject::GenerateObjectHandlesTexture(wstring text)
 		}
 	}
 
-	m_TextureObjectHalndes.Width = g_ObjectHandlesWidth;
-	m_TextureObjectHalndes.Height = g_ObjectHandlesHeight;
-
-	g_GL.BindTexture16(m_TextureObjectHalndes.Texture, g_ObjectHandlesWidth, g_ObjectHandlesHeight, pixels);
+	g_GL_BindTexture16(m_TextureObjectHalndes, g_ObjectHandlesWidth, g_ObjectHandlesHeight, pixels);
 }
 //----------------------------------------------------------------------------------
 /*!
@@ -305,7 +302,7 @@ void CGameObject::ClearNotOpenedItems()
 		{
 			CGameObject *next = (CGameObject*)obj->m_Next;
 
-			if (!obj->NPC && !((CGameItem*)obj)->Opened)
+			if (!obj->NPC && !((CGameItem*)obj)->Opened && ((CGameItem*)obj)->Layer != OL_BACKPACK)
 				g_World->RemoveObject(obj);
 
 			obj = next;

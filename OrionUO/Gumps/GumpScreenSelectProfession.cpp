@@ -253,9 +253,9 @@ void CGumpScreenSelectProfession::UpdateContentNew()
 		{
 			Add(new CGUIResizepic(ID_SPS_LABEL + index, 0x0BB8, 145 + offsX, 168 + offsY, 175, 34));
 
-			CGUITextEntry *entry = (CGUITextEntry*)Add(new CGUITextEntry(ID_SPS_LABEL + index, 0, 0, 0, 151 + offsX, 174 + offsY, 185, true, 2, TS_LEFT, UOFONT_FIXED));
+			CGUITextEntry *entry = (CGUITextEntry*)Add(new CGUITextEntry(ID_SPS_LABEL + index, 0, 0, 0, 151 + offsX, 174 + offsY, 185, true, 2, TS_LEFT, UOFONT_FIXED | UOFONT_SOLID));
 			entry->m_Entry.SetText(child->Name);
-			entry->m_Entry.PrepareToDrawW(2, 0);
+			entry->m_Entry.PrepareToDrawW(2, 0, TS_LEFT, UOFONT_FIXED | UOFONT_SOLID);
 			entry->CheckOnSerial = true;
 			entry->ReadOnly = true;
 
@@ -371,23 +371,23 @@ void CGumpScreenSelectProfession::InitToolTip()
 	{
 		case ID_SPS_QUIT:
 		{
-			g_ToolTip.Set(L"Quit Ultima Online", g_SelectedObject.Object(), 80);
+			g_ToolTip.Set(L"Quit Ultima Online", 80);
 			break;
 		}
 		case ID_SPS_ARROW_NEXT:
 		{
-			g_ToolTip.Set(L"Next screen", g_SelectedObject.Object());
+			g_ToolTip.Set(L"Next screen");
 			break;
 		}
 		case ID_SPS_ARROW_PREV:
 		{
-			g_ToolTip.Set(L"Preveous screen", g_SelectedObject.Object());
+			g_ToolTip.Set(L"Preveous screen");
 			break;
 		}
 		case ID_SPS_ARROW_BACK_PROFESSION:
 		case ID_SPS_LABEL_BACK_PROFESSION:
 		{
-			g_ToolTip.Set(L"Back to select profession category", g_SelectedObject.Object(), 150);
+			g_ToolTip.Set(L"Back to select profession category", 150);
 			break;
 		}
 		default:
@@ -405,7 +405,7 @@ void CGumpScreenSelectProfession::InitToolTip()
 			if (id == ID_SPS_LABEL + index)
 			{
 				if (child->DescriptionClilocID)
-					g_ToolTip.Set(child->DescriptionClilocID, "Description", g_SelectedObject.Object(), 350);
+					g_ToolTip.Set(child->DescriptionClilocID, "Description", 350);
 
 				break;
 			}
@@ -501,7 +501,7 @@ void CGumpScreenSelectProfession::GUMP_BUTTON_EVENT_C
 	{
 		if (serial >= ID_SPS_SKILLS_LIST)
 		{
-			g_SelectProfessionScreen.DecSkillSelection();
+			g_SelectProfessionScreen.SkillSelection = g_SelectProfessionScreen.SkillSelection - 1;;
 			int index = serial - ID_SPS_SKILLS_LIST;
 			index = g_SkillSort.m_Skills[index];
 

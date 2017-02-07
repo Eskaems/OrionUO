@@ -18,8 +18,15 @@
 //----------------------------------------------------------------------------------
 class CGLTexture
 {
+	//!Габариты текстуры
 	SETGET(int, Width);
 	SETGET(int, Height);
+
+	//!Буфер вершин
+	SETGET(GLuint, VertexBuffer);
+
+	//!Буфер вершин для зеркального отображения анимации
+	SETGET(GLuint, MirroredVertexBuffer);
 
 public:
 	CGLTexture();

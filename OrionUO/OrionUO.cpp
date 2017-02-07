@@ -446,11 +446,7 @@ bool COrion::Install()
 	};
 
 	IFOR(i, 0, 2)
-	{
-		g_TextureGumpState[i].Width = 10;
-		g_TextureGumpState[i].Height = 14;
-		g_GL.BindTexture16(g_TextureGumpState[i].Texture, 10, 14, &pdwlt[i][0]);
-	}
+		g_GL_BindTexture16(g_TextureGumpState[i], 10, 14, &pdwlt[i][0]);
 
 	memset(&m_WinterTile[0], 0, sizeof(m_WinterTile));
 
@@ -628,9 +624,50 @@ void COrion::InitScreen(const GAME_STATE &state)
 //----------------------------------------------------------------------------------
 void COrion::GetCurrentLocale()
 {
+	switch (LOBYTE(GetSystemDefaultLangID()))
+	{
+		case LANG_RUSSIAN:
+		{
+			g_Language = "RUS";
+			break;
+		}
+		case LANG_FRENCH:
+		{
+			g_Language = "FRA";
+			break;
+		}
+		case LANG_GERMAN:
+		{
+			g_Language = "DEU";
+			break;
+		}
+		case LANG_SPANISH:
+		{
+			g_Language = "ESP";
+			break;
+		}
+		case LANG_JAPANESE:
+		{
+			g_Language = "JPN";
+			break;
+		}
+		case LANG_KOREAN:
+		{
+			g_Language = "KOR";
+			break;
+		}
+		default:
+		{
+			g_Language = "ENU";
+			break;
+		}
+	}
+
+	LOG("Locale set to: %s\n", g_Language.c_str());
+
 	//https://msdn.microsoft.com/en-us/library/cc233982.aspx
 
-	wchar_t localeName[LOCALE_NAME_MAX_LENGTH] = { 0 };
+	/*wchar_t localeName[LOCALE_NAME_MAX_LENGTH] = { 0 };
 
 	if (GetSystemDefaultLocaleName(&localeName[0], LOCALE_NAME_MAX_LENGTH))
 	{
@@ -657,7 +694,7 @@ void COrion::GetCurrentLocale()
 		LOG("Locale set to: %s\n", g_Language.c_str());
 	}
 	else
-		LOG("Locale set to default value: ENU\n");
+		LOG("Locale set to default value: ENU\n");*/
 }
 //----------------------------------------------------------------------------------
 ushort COrion::TextToGraphic(const char *text)
@@ -880,6 +917,16 @@ void COrion::LoadClientConfig()
 		WISP_DATASTREAM::CDataReader file(&realData[0], realData.size());
 
 		uchar version = file.ReadInt8();
+		uchar dllVersion = file.ReadInt8();
+		uchar subVersion = 0;
+
+		if (dllVersion != 0xFE)
+		{
+			g_OrionWindow.ShowMessage("Old version of Orion.dll detected!!!\nClient may be crashed in process!!!", "Warning!");
+			file.Move(-1);
+		}
+		else
+			subVersion = file.ReadInt8();
 
 		g_PacketManager.ClientVersion = (CLIENT_VERSION)file.ReadInt8();
 
@@ -888,6 +935,8 @@ void COrion::LoadClientConfig()
 
 		g_NetworkInit = (NETWORK_INIT_TYPE*)file.ReadUInt32LE();
 		g_NetworkAction = (NETWORK_ACTION_TYPE*)file.ReadUInt32LE();
+		if (dllVersion == 0xFE)
+			g_NetworkPostAction = (NETWORK_POST_ACTION_TYPE*)file.ReadUInt32LE();
 		g_PluginInit = (PLUGIN_INIT_TYPE*)file.ReadUInt32LE();
 
 		file.Move(1);
@@ -2343,6 +2392,12 @@ int COrion::ValueInt(const VALUE_KEY_INT &key, int value)
 
 			break;
 		}
+		case VKI_FAST_ROTATION:
+		{
+			g_PathFinder.FastRotation = (value != 0);
+
+			break;
+		}
 		default:
 			break;
 	}
@@ -3486,10 +3541,7 @@ void COrion::CreateAuraTexture()
 		}
 	}
 
-	g_AuraTexture.Width = width;
-	g_AuraTexture.Height = height;
-
-	g_GL.BindTexture32(g_AuraTexture.Texture, width, height, &pixels[0]);
+	g_GL_BindTexture32(g_AuraTexture, width, height, &pixels[0]);
 }
 //----------------------------------------------------------------------------------
 void COrion::CreateObjectHandlesBackground()
@@ -3989,7 +4041,7 @@ void COrion::DrawResizepicGump(const ushort &id, const int &x, const int &y, con
 			th[i] = pth;
 	}
 
-	g_GL.DrawResizepic(th, x, y, width, height);
+	g_GL_DrawResizepic(th, x, y, width, height);
 }
 //----------------------------------------------------------------------------------
 void COrion::DrawLandTexture(CLandObject *land, ushort color, const int &x, const int &y)
@@ -4019,7 +4071,7 @@ void COrion::DrawLandTexture(CLandObject *land, ushort color, const int &x, cons
 
 			glUniform1iARB(g_ShaderDrawMode, drawMode);
 
-			g_GL.DrawLandTexture(th->Texture, x, y, land->Rect, land->m_Normals);
+			g_GL_DrawLandTexture(*th, x, y, land);
 		}
 	}
 }
@@ -4040,7 +4092,7 @@ void COrion::DrawLandArt(const ushort &id, ushort color, const int &x, const int
 
 		glUniform1iARB(g_ShaderDrawMode, drawMode);
 
-		th->Draw(x - 23, y - (23 + (z * 4)));
+		th->Draw(x - 22, y - (22 + (z * 4)));
 	}
 }
 //----------------------------------------------------------------------------------
@@ -4476,8 +4528,8 @@ bool COrion::LandPixelsInXY(const ushort &id, int x, int  y, const int &z)
 
 	if (th != NULL)
 	{
-		x = (g_MouseManager.Position.X - x) + 23;
-		y = (g_MouseManager.Position.Y - y) + 23 + (z * 4);
+		x = (g_MouseManager.Position.X - x) + 22;
+		y = (g_MouseManager.Position.Y - y) + 22 + (z * 4);
 
 #if UO_ENABLE_TEXTURE_DATA_SAVING == 1
 		if (x >= 0 && y >= 0 && x < th->Width && y < th->Height)
@@ -4492,7 +4544,7 @@ bool COrion::LandPixelsInXY(const ushort &id, int x, int  y, const int &z)
 //----------------------------------------------------------------------------------
 bool COrion::LandTexturePixelsInXY(int x, int  y, RECT &r)
 {
-	y -= 23;
+	y -= 22;
 	int testX = g_MouseManager.Position.X - x;
 	int testY = g_MouseManager.Position.Y;
 
@@ -4517,7 +4569,7 @@ void COrion::CreateTextMessageF(uchar font, ushort color, const char *format, ..
 	va_list arg;
 	va_start(arg, format);
 
-	char buf[128] = { 0 };
+	char buf[512] = { 0 };
 	vsprintf_s(buf, format, arg);
 
 	CreateTextMessage(TT_SYSTEM, 0xFFFFFFFF, font, color, buf);
@@ -4530,7 +4582,7 @@ void COrion::CreateUnicodeTextMessageF(uchar font, ushort color, const char *for
 	va_list arg;
 	va_start(arg, format);
 
-	char buf[128] = { 0 };
+	char buf[512] = { 0 };
 	vsprintf_s(buf, format, arg);
 
 	CreateUnicodeTextMessage(TT_SYSTEM, 0xFFFFFFFF, font, color, ToWString(buf));
@@ -4845,7 +4897,12 @@ void COrion::PickupItem(CGameItem *obj, int count, bool isGameFigure)
 		g_ObjectInHand->DragCount = count;
 
 		if (obj->Container != 0xFFFFFFFF)
-			g_GumpManager.UpdateContent(obj->Container, 0, GT_CONTAINER);
+		{
+			CGump *gump = g_GumpManager.UpdateContent(obj->Container, 0, GT_CONTAINER);
+
+			//if (gump != NULL && g_PacketManager.ClientVersion >= CV_308Z)
+			//	g_PacketManager.AddMegaClilocRequest(gump->Serial, true);
+		}
 
 		CPacketPickupRequest(obj->Serial, count).Send();
 	}

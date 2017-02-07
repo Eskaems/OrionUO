@@ -29,7 +29,12 @@ USHORT_LIST CMulReader::GetGumpPixels(CIndexObject &io)
 
 	int blocksize = io.Width * io.Height;
 
-	USHORT_LIST pixels(blocksize);
+	USHORT_LIST pixels;
+
+	if (!blocksize)
+		return pixels;
+
+	pixels.resize(blocksize);
 
 #if UO_ENABLE_TEXTURE_DATA_SAVING == 1
 	USHORT_LIST &data = io.Texture.PixelsData;
@@ -84,15 +89,15 @@ USHORT_LIST CMulReader::GetGumpPixels(CIndexObject &io)
 */
 CGLTexture *CMulReader::ReadGump(CIndexObject &io)
 {
-	CGLTexture *th = new CGLTexture();
-	th->Width = io.Width;
-	th->Height = io.Height;
-	th->Texture = 0;
+	CGLTexture *th = NULL;
 
 	USHORT_LIST pixels = GetGumpPixels(io);
 
 	if (pixels.size())
-		g_GL.BindTexture16(th->Texture, io.Width, io.Height, &pixels[0]);
+	{
+		th = new CGLTexture();
+		g_GL_BindTexture16(*th, io.Width, io.Height, &pixels[0]);
+	}
 
 	return th;
 }
@@ -257,7 +262,7 @@ CGLTexture *CMulReader::ReadArt(const ushort &id, CIndexObject &io)
 			}
 		}
 
-		g_GL.BindTexture16(th->Texture, 44, 44, &pixels[0]);
+		g_GL_BindTexture16(*th, 44, 44, &pixels[0]);
 	}
 	else //run tile
 	{
@@ -435,11 +440,8 @@ CGLTexture *CMulReader::ReadArt(const ushort &id, CIndexObject &io)
 			}
 		}
 
-		g_GL.BindTexture16(th->Texture, w, h, &pixels[0]);
+		g_GL_BindTexture16(*th, w, h, &pixels[0]);
 	}
-
-	th->Width = w;
-	th->Height = h;
 
 	return th;
 }
@@ -778,10 +780,7 @@ CGLTexture *CMulReader::ReadTexture(CIndexObject &io)
 		}
 	}
 
-	th->Width = w;
-	th->Height = h;
-
-	g_GL.BindTexture16(th->Texture, w, h, &pixels[0]);
+	g_GL_BindTexture16(*th, w, h, &pixels[0]);
 
 	return th;
 }
@@ -812,10 +811,7 @@ CGLTexture *CMulReader::ReadLight(CIndexObject &io)
 		}
 	}
 
-	th->Width = io.Width;
-	th->Height = io.Height;
-
-	g_GL.BindTexture16(th->Texture, io.Width, io.Height, &pixels[0]);
+	g_GL_BindTexture16(*th, io.Width, io.Height, &pixels[0]);
 
 	return th;
 }
