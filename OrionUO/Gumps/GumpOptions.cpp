@@ -496,7 +496,7 @@ void CGumpOptions::InitToolTip()
 			}
 			case ID_GO_P2_DEV_MODE_4:
 			{
-				g_ToolTip.Set(L"Show FPS and highlight the land/static tiles", g_SelectedObject.Object());
+				g_ToolTip.Set(L"Show FPS and highlight the land/static tiles");
 				break;
 			}
 			case ID_GO_P3_USE_TOOLTIP:
