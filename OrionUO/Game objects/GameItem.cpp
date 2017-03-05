@@ -665,7 +665,7 @@ ushort CGameItem::GetMountAnimation()
 			graphic = m_TiledataPtr->AnimID;
 	}
 	else if (IsCorpse())
-		graphic = (ushort)m_Count;
+		graphic = 0x0006;	// труп птицы
 
 	return graphic;
 }
