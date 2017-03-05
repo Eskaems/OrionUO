@@ -6,6 +6,7 @@
 #include <psapi.h>
 #include <tlhelp32.h>
 #include "VMQuery.h"
+#include "Game objects/MapBlock.h"
 
 #pragma comment(lib, "Psapi.lib")
 //----------------------------------------------------------------------------------
@@ -135,6 +136,9 @@ LONG __stdcall OrionUnhandledExceptionFilter(struct _EXCEPTION_POINTERS *excepti
 
 	if (exceptionInfo->ExceptionRecord)
 	{
+		for (DEBUGMAPINFO &info : g_DMI)
+			CRASHLOG("map: %d; x: %d; y: %d; MapAddress: 0x%08X\n", info.map, info.x, info.y, info.address);
+		
 		CRASHLOG("Unhandled exception #%i: 0x%08X at %08X\n", errorCount, exceptionInfo->ExceptionRecord->ExceptionCode, exceptionInfo->ExceptionRecord->ExceptionAddress);
 
 		if (errorCount > 100 && (ticks - lastErrorTime) < 5000)
@@ -143,8 +147,8 @@ LONG __stdcall OrionUnhandledExceptionFilter(struct _EXCEPTION_POINTERS *excepti
 			{
 				DumpLibraryInformation();
 
-				DumpCurrentRegistersInformation(exceptionInfo->ContextRecord);
-
+				DumpCurrentRegistersInformation(exceptionInfo->ContextRecord);	
+				
 				WISP_FILE::CMappedFile file;
 
 				wchar_t fileName[MAX_PATH] = { 0 };
@@ -162,7 +166,7 @@ LONG __stdcall OrionUnhandledExceptionFilter(struct _EXCEPTION_POINTERS *excepti
 
 					for (const int &item : list)
 						CRASHLOG("Address in exe (by EIP): 0x%08X\n", item);
-
+		
 					file.Unload();
 				}
 

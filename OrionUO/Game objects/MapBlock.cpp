@@ -13,6 +13,10 @@
 #include "../MulStruct.h"
 #include "../OrionUO.h"
 #include "../GLEngine/GLEngine.h"
+
+DEBUGMAPINFO g_DMI[10];
+int g_DMIPtr = 0;
+
 //----------------------------------------------------------------------------------
 CMapBlock::CMapBlock(const uint &index)
 : CBaseQueueItem(), m_Index(index), m_LastAccessTime(GetTickCount()), m_X(0), m_Y(0)
@@ -279,12 +283,23 @@ bool CMapBlock::TestStretched(const int &x, const int &y, const char &z, const i
 //----------------------------------------------------------------------------------
 char CMapBlock::GetLandZ(const int &x, const int &y, const int &map)
 {
-	CIndexMap *blockIndex = g_MapManager->GetIndex(map, x / 8, y / 8);
+	DEBUGMAPINFO &info = g_DMI[g_DMIPtr];
+	memset(&info, 0, sizeof(info));
+		
+	g_DMIPtr = (g_DMIPtr + 1) % 10;
+	
+	info.x = x;
+	info.y = y;
+	info.map = map;
 
+	CIndexMap *blockIndex = g_MapManager->GetIndex(map, x / 8, y / 8);
+	
 	//Проверки актуальности данных
 	if (blockIndex == NULL || blockIndex->MapAddress == 0)
 		return -125;
 
+	info.address = blockIndex->MapAddress;
+	
 	int mX = x % 8;
 	int mY = y % 8;
 

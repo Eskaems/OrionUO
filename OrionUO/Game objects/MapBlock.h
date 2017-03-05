@@ -15,6 +15,17 @@
 #include "../RenderWorldObject.h"
 #include "../Game objects/LandObject.h"
 //----------------------------------------------------------------------------------
+struct DEBUGMAPINFO
+{
+	int x;
+	int y;
+	int map;
+	uint address;
+};
+
+extern DEBUGMAPINFO g_DMI[10];
+extern int g_DMIPtr;
+
 //Класс для работы с блоками карты 8х8
 class CMapBlock : public CBaseQueueItem
 {
