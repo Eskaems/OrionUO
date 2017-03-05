@@ -90,6 +90,7 @@
 #include "ExceptionFilter.h"
 #include "Gumps/GumpCombatBook.h"
 #include "Gumps/GumpRacialAbilitiesBook.h"
+#include "TargetGump.h"
 //----------------------------------------------------------------------------------
 typedef void __cdecl PLUGIN_INIT_TYPE(STRING_LIST&, STRING_LIST&, UINT_LIST&);
 //----------------------------------------------------------------------------------
@@ -746,7 +747,7 @@ void COrion::CheckStaticTileFilterFiles()
 		file.Init(filePath);
 		file.Print("#Format: graphic hatched\n");
 
-		static const int treeTilesCount = 45;
+		static const int treeTilesCount = 53;
 
 		static const ushort treeTiles[treeTilesCount] =
 		{
@@ -758,7 +759,9 @@ void COrion::CheckStaticTileFilterFiles()
 			0x0D71, 0x0D72, 0x0D84, 0x0D85, 0x0D86,
 			0x0D94, 0x0D98, 0x0D9C, 0x0DA0, 0x0DA4,
 			0x0DA8, 0x0C9E, 0x0CA8, 0x0CAA, 0x0CAB,
-			0x0CC9, 0x0CF8, 0x0CFB, 0x0CFE, 0x0D01
+			0x0CC9, 0x0CF8, 0x0CFB, 0x0CFE, 0x0D01,
+			0x12B6, 0x12B7, 0x12B8, 0x12B9, 0x12BA,
+			0x12BB, 0x12BC, 0x12BD
 		};
 
 		IFOR(i, 0, treeTilesCount)
@@ -777,6 +780,14 @@ void COrion::CheckStaticTileFilterFiles()
 				case 0x0CFB:
 				case 0x0CFE:
 				case 0x0D01:
+				case 0x12B6:
+				case 0x12B7:
+				case 0x12B8:
+				case 0x12B9:
+				case 0x12BA:
+				case 0x12BB:
+				case 0x12BC:
+				case 0x12BD:
 					hatched = 0;
 				default:
 					break;
@@ -1104,41 +1115,41 @@ void COrion::Process(const bool &rendering)
 
 			RemoveRangedObjects();
 			g_GumpManager.RemoveRangedGumps();
-		}
 
-		if (rendering)
-		{
-			g_GameScreen.CalculateGameWindowBounds();
-
-			g_GameScreen.CalculateRenderList();
-			g_GameScreen.RenderListInitalized = true;
-
-			g_SelectedObject.Clear();
-
-			if (!IsIconic(g_OrionWindow.Handle))
+			if (rendering)
 			{
-				if (canRenderSelect)
-					g_GameScreen.Render(false);
+				g_GameScreen.CalculateGameWindowBounds();
 
-				CGump::ProcessListing();
+				g_GameScreen.CalculateRenderList();
+				g_GameScreen.RenderListInitalized = true;
 
-				g_GameScreen.PrepareContent();
+				g_SelectedObject.Clear();
 
-				g_GameScreen.Render(true);
-			}
+				if (!IsIconic(g_OrionWindow.Handle))
+				{
+					if (canRenderSelect)
+						g_GameScreen.Render(false);
 
-			g_Target.UnloadMulti();
+					CGump::ProcessListing();
 
-			g_GameScreen.RenderListInitalized = false;
+					g_GameScreen.PrepareContent();
 
-			g_MapManager->Init(true);
+					g_GameScreen.Render(true);
+				}
 
-			for (UINTS_PAIR_LIST::iterator i = g_CorpseSerialList.begin(); i != g_CorpseSerialList.end(); )
-			{
-				if (i->second < g_Ticks)
-					i = g_CorpseSerialList.erase(i);
-				else
-					i++;
+				g_Target.UnloadMulti();
+
+				g_GameScreen.RenderListInitalized = false;
+
+				g_MapManager->Init(true);
+
+				for (UINTS_PAIR_LIST::iterator i = g_CorpseSerialList.begin(); i != g_CorpseSerialList.end();)
+				{
+					if (i->second < g_Ticks)
+						i = g_CorpseSerialList.erase(i);
+					else
+						i++;
+				}
 			}
 		}
 	}
@@ -1407,6 +1418,7 @@ void COrion::ClearUnusedTextures()
 
 	IFOR(i, 0, 5)
 	{
+		int count = 0;
 		deque<CIndexObject*> *list = (deque<CIndexObject*>*)lists[i];
 
 		for (deque<CIndexObject*>::iterator it = list->begin(); it != list->end();)
@@ -1422,11 +1434,16 @@ void COrion::ClearUnusedTextures()
 				}
 
 				it = list->erase(it);
+
+				if (++count >= MAX_OBJECT_REMOVED_BY_GARBAGE_COLLECTOR)
+					break;
 			}
 			else
 				it++;
 		}
 	}
+
+	int count = 0;
 
 	for (deque<CIndexSound*>::iterator it = m_UsedSoundList.begin(); it != m_UsedSoundList.end();)
 	{
@@ -1441,6 +1458,9 @@ void COrion::ClearUnusedTextures()
 			}
 
 			it = m_UsedSoundList.erase(it);
+
+			if (++count >= MAX_OBJECT_REMOVED_BY_GARBAGE_COLLECTOR)
+				break;
 		}
 		else
 			it++;
@@ -1478,6 +1498,7 @@ void COrion::Connect()
 //----------------------------------------------------------------------------------
 void COrion::Disconnect()
 {
+	g_AbyssPacket03First = true;
 	g_PluginManager.Disconnect();
 
 	g_SystemChat.Clear();
@@ -1552,7 +1573,10 @@ void COrion::RelayServer(const char *ip, int port, puchar gameSeed)
 	memcpy(&g_GameSeed[0], &gameSeed[0], 4);
 	g_ConnectionManager.Init(gameSeed);
 
-	if (g_ConnectionManager.Connect(ip, port, gameSeed))
+	string login = ip;
+	LoadLogin(login, port);
+
+	if (g_ConnectionManager.Connect(login, port, gameSeed))
 	{
 		g_ConnectionScreen.Connected = true;
 
@@ -1595,7 +1619,7 @@ void COrion::LoginComplete()
 		//PaperdollReq(g_PlayerSerial);
 
 		//CPacketOpenChat(L"").Send();
-		//CPacketRazorAnswer().Send();
+		CPacketRazorAnswer().Send();
 
 		CPacketLanguage(g_Language.c_str()).Send();
 
@@ -2412,6 +2436,39 @@ int COrion::ValueInt(const VALUE_KEY_INT &key, int value)
 		case VKI_FAST_ROTATION:
 		{
 			g_PathFinder.FastRotation = (value != 0);
+
+			break;
+		}
+		case VKI_IGNORE_STAMINA_CHECK:
+		{
+			g_PathFinder.IgnoreStaminaCheck = (value != 0);
+
+			break;
+		}
+		case VKI_LAST_TARGET:
+		{
+			if (value == -1)
+				value = g_LastTargetObject;
+			else
+				g_LastTargetObject = value;
+
+			break;
+		}
+		case VKI_LAST_ATTACK:
+		{
+			if (value == -1)
+				value = g_LastAttackObject;
+			else
+				g_LastAttackObject = value;
+
+			break;
+		}
+		case VKI_NEW_TARGET_SYSTEM_SERIAL:
+		{
+			if (value == -1)
+				value = g_NewTargetSystem.Serial;
+			else
+				g_NewTargetSystem.Serial = value;
 
 			break;
 		}

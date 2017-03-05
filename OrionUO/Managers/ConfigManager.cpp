@@ -111,6 +111,8 @@ void CConfigManager::DefaultPage2()
 	m_ScreenshotFormat = SF_PNG;
 	m_ScaleImagesInPaperdollSlots = true;
 	m_RemoveOrCreateObjectsWithBlending = true;
+	m_DrawHelmetsOnShroud = false;
+	m_UseGlobalMapLayer = false;
 }
 //---------------------------------------------------------------------------
 void CConfigManager::DefaultPage3()
@@ -397,6 +399,18 @@ void CConfigManager::OnChangeScaleImagesInPaperdollSlots(const bool &val)
 	}
 }
 //---------------------------------------------------------------------------
+void CConfigManager::OnChangeUseGlobalMapLayer(const bool &val)
+{
+	if (this == &g_ConfigManager && val)
+	{
+		QFOR(gump, g_GumpManager.m_Items, CGump*)
+		{
+			if (gump->GumpType == GT_WORLD_MAP)
+				g_GumpManager.MoveToFront(gump);
+		}
+	}
+}
+//---------------------------------------------------------------------------
 /*!
 Получить цвет исходя из "злобности"
 @param [__in] notoriety Злобность
@@ -509,6 +523,8 @@ bool CConfigManager::Load(string path)
 		m_DrawAuraWithCtrlPressed = true;
 		m_ScreenshotFormat = SF_PNG;
 		bool scaleImagesInPaperdollSlots = true;
+		m_DrawHelmetsOnShroud = false;
+		m_UseGlobalMapLayer = false;
 
 		if (file.ReadInt8() == 2)
 		{
@@ -554,7 +570,17 @@ bool CConfigManager::Load(string path)
 							scaleImagesInPaperdollSlots = file.ReadUInt8();
 
 							if (blockSize > 27)
+							{
 								m_RemoveOrCreateObjectsWithBlending = file.ReadUInt8();
+
+								if (blockSize > 28)
+								{
+									m_DrawHelmetsOnShroud = file.ReadUInt8();
+
+									if (blockSize > 29)
+										m_UseGlobalMapLayer = file.ReadUInt8();
+								}
+							}
 						}
 					}
 				}
@@ -938,7 +964,7 @@ void CConfigManager::Save(string path)
 	writter.WriteBuffer();
 
 	//Page 2
-	writter.WriteInt8(28); //size of block
+	writter.WriteInt8(30); //size of block
 	writter.WriteInt8(2); //page index
 	writter.WriteUInt8(m_ClientFPS);
 	writter.WriteUInt8(m_UseScaling);
@@ -972,6 +998,8 @@ void CConfigManager::Save(string path)
 	writter.WriteUInt8(m_ScreenshotFormat);
 	writter.WriteUInt8(m_ScaleImagesInPaperdollSlots);
 	writter.WriteUInt8(m_RemoveOrCreateObjectsWithBlending);
+	writter.WriteUInt8(m_DrawHelmetsOnShroud);
+	writter.WriteUInt8(m_UseGlobalMapLayer);
 
 	writter.WriteBuffer();
 

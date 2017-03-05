@@ -991,7 +991,8 @@ void CAnimationManager::GetSittingAnimDirection(uchar &dir, bool &mirror, int &x
 */
 void CAnimationManager::ClearUnusedTextures(uint ticks)
 {
-	ticks -= CLEAR_TEXTURES_DELAY;
+	ticks -= CLEAR_ANIMATION_TEXTURES_DELAY;
+	int count = 0;
 
 	for (deque<CTextureAnimationDirection*>::iterator it = m_UsedAnimList.begin(); it != m_UsedAnimList.end();)
 	{
@@ -1004,10 +1005,15 @@ void CAnimationManager::ClearUnusedTextures(uint ticks)
 			obj->LastAccessTime = 0;
 
 			it = m_UsedAnimList.erase(it);
+
+			if (++count >= MAX_OBJECT_REMOVED_BY_GARBAGE_COLLECTOR)
+				break;
 		}
 		else
 			it++;
 	}
+
+	LOG("CAnimationManager::ClearUnusedTextures::removed %i\n", count);
 }
 //----------------------------------------------------------------------------------
 /*!
@@ -1580,6 +1586,7 @@ void CAnimationManager::DrawCharacter(CGameCharacter *obj, int x, int y, int z)
 		uint auraColor = g_ColorManager.GetPolygoneColor(16, g_ConfigManager.GetColorByNotoriety(obj->Notoriety));
 		glColor4ub(GetRValue(auraColor), GetGValue(auraColor), GetBValue(auraColor), 0xFF);
 
+		glUniform1iARB(g_ShaderDrawMode, 0);
 		g_AuraTexture.Draw(drawX - g_AuraTexture.Width / 2, drawY - g_AuraTexture.Height / 2);
 
 		glColor4f(1.0f, 1.0f, 1.0f, 1.0f);
@@ -2047,66 +2054,71 @@ ANIMATION_DIMENSIONS CAnimationManager::GetAnimationDimensions(CGameObject *obj,
 
 	bool found = false;
 
-	if (id < MAX_ANIMATIONS_DATA_INDEX_COUNT && dir < 5)
+	if (id < MAX_ANIMATIONS_DATA_INDEX_COUNT)
 	{
-		CTextureAnimationDirection &direction = m_DataIndex[id].m_Groups[animGroup].m_Direction[dir];
-
-		if (direction.Address != NULL)
+		if (dir < 5)
 		{
-			int fc = direction.FrameCount;
+			CTextureAnimationDirection &direction = m_DataIndex[id].m_Groups[animGroup].m_Direction[dir];
 
-			if (fc > 0 && frameIndex >= fc)
+			if (direction.Address != NULL)
 			{
-				if (obj->IsCorpse())
-					frameIndex = fc - 1;
-				else
-					frameIndex = 0;
-			}
+				int fc = direction.FrameCount;
 
-			CTextureAnimationFrame *frame = direction.FindFrame(frameIndex);
+				if (fc > 0 && frameIndex >= fc)
+				{
+					if (obj->IsCorpse())
+						frameIndex = fc - 1;
+					else
+						frameIndex = 0;
+				}
 
-			if (frame != NULL)
-			{
-				result.Width = frame->m_Texture.Width;
-				result.Height = frame->m_Texture.Height;
-				result.CenterX = frame->CenterX;
-				result.CenterY = frame->CenterY;
+				CTextureAnimationFrame *frame = direction.FindFrame(frameIndex);
 
-				found = true;
+				if (frame != NULL)
+				{
+					result.Width = frame->m_Texture.Width;
+					result.Height = frame->m_Texture.Height;
+					result.CenterX = frame->CenterX;
+					result.CenterY = frame->CenterY;
+
+					found = true;
+				}
 			}
 		}
-	}
-	
-	if (!found && id < MAX_ANIMATIONS_DATA_INDEX_COUNT && animGroup < ANIMATION_GROUPS_COUNT)
-	{
-		CTextureAnimationDirection &direction = m_DataIndex[id].m_Groups[animGroup].m_Direction[0];
 
-		puchar ptr = (puchar)direction.Address;
-
-		if (ptr != NULL)
+		if (!found)
 		{
-			SetData(ptr, direction.Size);
-			Move(sizeof(ushort[256]));  //Palette
+			CTextureAnimationDirection &direction = m_DataIndex[id].m_Groups[animGroup].m_Direction[0];
 
-			int frameCount = ReadUInt32LE();
+			puchar ptr = (puchar)direction.Address;
 
-			if (frameCount > 0 && frameIndex >= frameCount)
+			if (ptr != NULL)
 			{
-				if (obj->IsCorpse())
-					frameIndex = frameCount - 1;
-				else
-					frameIndex = 0;
-			}
+				SetData(ptr, direction.Size);
+				Move(sizeof(ushort[256]));  //Palette
+				puchar dataStart = m_Ptr;
 
-			if (frameIndex < frameCount)
-			{
-				puint frameOffset = (puint)m_Ptr;
-				Move(frameOffset[frameIndex]);
+				int frameCount = ReadUInt32LE();
 
-				result.CenterX = ReadInt16LE();
-				result.CenterY = ReadInt16LE();
-				result.Width = ReadInt16LE();
-				result.Height = ReadInt16LE();
+				if (frameCount > 0 && frameIndex >= frameCount)
+				{
+					if (obj->IsCorpse())
+						frameIndex = frameCount - 1;
+					else
+						frameIndex = 0;
+				}
+
+				if (frameIndex < frameCount)
+				{
+					puint frameOffset = (puint)m_Ptr;
+					//Move(frameOffset[frameIndex]);
+					m_Ptr = dataStart + frameOffset[frameIndex];
+
+					result.CenterX = ReadInt16LE();
+					result.CenterY = ReadInt16LE();
+					result.Width = ReadInt16LE();
+					result.Height = ReadInt16LE();
+				}
 			}
 		}
 	}
@@ -2369,8 +2381,10 @@ bool CAnimationManager::IsCovered(const int &layer, CGameObject *owner)
 
 			break;
 		}
-		case OL_HAIR:
 		case OL_HELMET:
+			if (g_ConfigManager.DrawHelmetsOnShroud)
+				break;
+		case OL_HAIR:
 		{
 			const ushort &robe = m_CharacterLayerGraphic[OL_ROBE];
 

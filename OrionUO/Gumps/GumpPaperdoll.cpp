@@ -37,7 +37,6 @@ int CGumpPaperdoll::UsedLayers[m_LayerCount] =
 	OL_GLOVES,
 	OL_TUNIC,
 	OL_SKIRT,
-	OL_TALISMAN,
 	OL_NECKLACE,
 	OL_HAIR,
 	OL_ROBE,
@@ -46,7 +45,8 @@ int CGumpPaperdoll::UsedLayers[m_LayerCount] =
 	OL_HELMET,
 	OL_WAIST,
 	OL_1_HAND,
-	OL_2_HAND
+	OL_2_HAND,
+	OL_TALISMAN
 };
 //----------------------------------------------------------------------------------
 CGumpPaperdoll::CGumpPaperdoll(uint serial, short x, short y, bool minimized)
@@ -339,7 +339,7 @@ void CGumpPaperdoll::PrepareContent()
 	{
 		WISP_GEOMETRY::CPoint2Di offset = g_MouseManager.LeftDroppedOffset();
 
-		if ((abs(offset.X) >= DRAG_PIXEL_RANGE || abs(offset.Y) >= DRAG_PIXEL_RANGE) || (g_MouseManager.LastLeftButtonClickTimer + g_MouseManager.DoubleClickDelay < g_Ticks))
+		if (CanBeDraggedByOffset(offset) || (g_MouseManager.LastLeftButtonClickTimer + g_MouseManager.DoubleClickDelay < g_Ticks))
 		{
 			int layer = g_PressedObject.LeftSerial - ID_GP_ITEMS;
 

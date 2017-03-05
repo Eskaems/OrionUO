@@ -479,6 +479,16 @@ void CGumpOptions::InitToolTip()
 				g_ToolTip.Set(L"Remove or new draw objects (static/game) displaying with blending");
 				break;
 			}
+			case ID_GO_P2_DRAW_HELMETS_ON_SHROUD:
+			{
+				g_ToolTip.Set(L"Draw helmets on shrouds in the world");
+				break;
+			}
+			case ID_GO_P2_USE_GLOBAL_MAP_LAYER:
+			{
+				g_ToolTip.Set(L"Draw world map before all gumps");
+				break;
+			}
 			case ID_GO_P2_DEV_MODE_1:
 			{
 				g_ToolTip.Set(L"Original client work");
@@ -1049,6 +1059,14 @@ void CGumpOptions::DrawPage2()
 	checkbox = (CGUICheckbox*)html->Add(new CGUICheckbox(ID_GO_P2_REMOVE_OR_CREATE_OBJECTS_WITH_BLENDING, 0x00D2, 0x00D3, 0x00D2, 0, 760));
 	checkbox->Checked = g_OptionsConfig.RemoveOrCreateObjectsWithBlending;
 	checkbox->SetTextParameters(0, L"Remove or new draw objects displaying with use blending", g_OptionsTextColor);
+
+	checkbox = (CGUICheckbox*)html->Add(new CGUICheckbox(ID_GO_P2_DRAW_HELMETS_ON_SHROUD, 0x00D2, 0x00D3, 0x00D2, 0, 780));
+	checkbox->Checked = g_OptionsConfig.DrawHelmetsOnShroud;
+	checkbox->SetTextParameters(0, L"Draw helmets on shroud in the world", g_OptionsTextColor);
+
+	checkbox = (CGUICheckbox*)html->Add(new CGUICheckbox(ID_GO_P2_USE_GLOBAL_MAP_LAYER, 0x00D2, 0x00D3, 0x00D2, 0, 800));
+	checkbox->Checked = g_OptionsConfig.UseGlobalMapLayer;
+	checkbox->SetTextParameters(0, L"Draw world map before all gumps", g_OptionsTextColor);
 
 	html->CalculateDataSize();
 }
@@ -2300,7 +2318,11 @@ void CGumpOptions::GUMP_CHECKBOX_EVENT_C
 				g_OptionsConfig.ScaleImagesInPaperdollSlots = state;
 			else if (serial == ID_GO_P2_REMOVE_OR_CREATE_OBJECTS_WITH_BLENDING)
 				g_OptionsConfig.RemoveOrCreateObjectsWithBlending = state;
-			
+			else if (serial == ID_GO_P2_DRAW_HELMETS_ON_SHROUD)
+				g_OptionsConfig.DrawHelmetsOnShroud = state;
+			else if (serial == ID_GO_P2_USE_GLOBAL_MAP_LAYER)
+				g_OptionsConfig.UseGlobalMapLayer = state;
+
 
 			else if (serial == ID_GO_P2_DEV_MODE_1)
 				g_OptionsDeveloperMode = DM_NO_DEBUG;
@@ -2871,6 +2893,8 @@ void CGumpOptions::ApplyPageChanges()
 			g_ConfigManager.ScreenshotFormat = g_OptionsConfig.ScreenshotFormat;
 			g_ConfigManager.ScaleImagesInPaperdollSlots = g_OptionsConfig.ScaleImagesInPaperdollSlots;
 			g_ConfigManager.RemoveOrCreateObjectsWithBlending = g_OptionsConfig.RemoveOrCreateObjectsWithBlending;
+			g_ConfigManager.DrawHelmetsOnShroud = g_OptionsConfig.DrawHelmetsOnShroud;
+			g_ConfigManager.UseGlobalMapLayer = g_OptionsConfig.UseGlobalMapLayer;
 			g_DeveloperMode = g_OptionsDeveloperMode;
 
 			break;

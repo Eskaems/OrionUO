@@ -2,6 +2,7 @@
 #include "Globals.h"
 #include "Multi.h"
 #include "Game objects/GameWorld.h"
+#include "Target.h"
 //----------------------------------------------------------------------------------
 bool g_AltPressed = false;
 bool g_CtrlPressed = false;
@@ -11,6 +12,7 @@ bool g_MovingFromMouse = false;
 bool g_AutoMoving = false;
 bool g_TheAbyss = false;
 bool g_AbyssPacket03First = true;
+bool g_Asmut = false;
 //----------------------------------------------------------------------------------
 int g_LandObjectsCount = 0;
 int g_StaticsObjectsCount = 0;
@@ -160,6 +162,14 @@ ushort g_AbilityList[MAX_ABILITIES_COUNT] =
 	30
 };
 uchar g_Ability[2] = { 4, 10 };
+//----------------------------------------------------------------------------------
+bool CanBeDraggedByOffset(const WISP_GEOMETRY::CPoint2Di &point)
+{
+	if (g_Target.IsTargeting())
+		return (abs(point.X) >= DRAG_PIXEL_RANGE_WITH_TARGET || abs(point.Y) >= DRAG_PIXEL_RANGE_WITH_TARGET);
+
+	return (abs(point.X) >= DRAG_PIXEL_RANGE || abs(point.Y) >= DRAG_PIXEL_RANGE);
+}
 //----------------------------------------------------------------------------------
 void TileOffsetOnMonitorToXY(int &ofsX, int &ofsY, int &x, int &y)
 {

@@ -23,6 +23,7 @@ extern bool g_AutoMoving;
 
 extern bool g_TheAbyss;
 extern bool g_AbyssPacket03First;
+extern bool g_Asmut;
 //----------------------------------------------------------------------------------
 #include "Wisp/WispGlobal.h"
 #include "Wisp/WispGeometry.h"
@@ -48,6 +49,8 @@ extern bool g_AbyssPacket03First;
 #endif //CWISPDEBUGLOGGER!=0
 //----------------------------------------------------------------------------------
 #pragma warning(disable: 4800) //forcing value to bool 'true' or 'false' (performance warning)
+//----------------------------------------------------------------------------------
+bool CanBeDraggedByOffset(const WISP_GEOMETRY::CPoint2Di &point);
 //----------------------------------------------------------------------------------
 void TileOffsetOnMonitorToXY(int &ofsX, int &ofsY, int &x, int &y);
 //----------------------------------------------------------------------------------
